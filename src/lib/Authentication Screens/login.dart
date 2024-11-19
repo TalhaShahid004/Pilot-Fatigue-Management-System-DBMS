@@ -62,7 +62,15 @@ class _LoginScreenState extends State<LoginScreen> {
       // Check if the widget is still in the tree
       if (isLoginSuccessful) {
         print('Login successful, navigating to dashboard...');
-        Navigator.pushNamed(context, '/dashboard');
+        // Navigator.pushNamed(context, '/dashboard');
+        Navigator.pushNamed(
+          context,
+          '/dashboard',
+          arguments: {
+            'username': username,
+            'password': password,
+          },
+        );
       } else {
         print('Login failed, staying on login screen.');
         // Optionally, show an error message

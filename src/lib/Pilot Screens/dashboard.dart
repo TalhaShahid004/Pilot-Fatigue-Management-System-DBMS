@@ -5,6 +5,13 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // added this:
+    // Extract arguments from ModalRoute
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, String>?;
+    final username = args?['username'] ?? 'Unknown';
+    final password = args?['password'] ?? 'Unknown';
+
     return Scaffold(
       backgroundColor: const Color(0xFF141414),
       body: SafeArea(
@@ -12,11 +19,11 @@ class DashboardScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.all(16.0),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  'Pilot Dashboard',
-                  style: TextStyle(
+                  'Pilot Dashboard - Welcome $username',
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
