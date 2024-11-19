@@ -6,7 +6,8 @@ import 'Authentication Screens/login.dart';
 import 'Authentication Screens/signup.dart';
 import 'Pilot Screens/dashboard.dart';
 
-void main() {
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(const MyApp());
