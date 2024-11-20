@@ -45,7 +45,7 @@ app.get('/data', (req, res) => {
     });
 });
 
-//API TO VERIFY PILOT CREDENTIALS (LOGIN PAGE)
+
 // POST route to verify pilot credentials
 // app.post('/login_verification', (req, res) => {
 //     console.log('Received login request:', req);
@@ -73,6 +73,10 @@ app.get('/data', (req, res) => {
 //         }
 //     );
 // });
+
+
+
+//API TO VERIFY PILOT CREDENTIALS (LOGIN PAGE)
 app.post('/login_verification', (req, res) => {
     const { username, password } = req.body;
     // const username = 'sali';
@@ -96,6 +100,68 @@ app.post('/login_verification', (req, res) => {
         }
     });
 });
+
+// API TO GET Upcoming PILOT FLIGHT (PILOT DASHBOARD)
+// Function to fetch flight details for a given username
+app.post('/getUpcomingFlightDetails', (req, res) => {
+    const { username } = req.body;
+  
+    if (!username) {
+      res.status(400).send('Username is required');
+      return;
+    }
+  
+    const query = `
+        SELECT concat(first_name, ' ', last_name) as full_name, f2.flight_id, route_code, TIMESTAMPDIFF(MINUTE, f2.start_time, f2.end_time) AS flight_time, 
+TIME(start_time) as starting_time, DATE_FORMAT(start_time, '%W, %D %M, %Y') AS flight_date
+FROM pilot p join flight_assignment f1 using (pilot_id) join flight as f2 using (flight_id) join flight_route f3 using (route_id)
+WHERE p.username = 'zahmed'
+ORDER BY flight_date ASC;
+    `;
+  
+    // Execute the query
+    connection.query(query, [username], (err, results) => {
+      if (err) {
+        console.error('Error querying the database:', err);
+        res.status(500).send('Error querying the database');
+        return;
+      }
+  
+      // Send the results as JSON
+      res.json(results);
+    });
+  });
+
+// API TO GET NEXT PILOT FLIGHTS (PILOT DASHBOARD)
+// Function to fetch flight details for a given username
+app.post('/getNextFlightDetails', (req, res) => {
+    const { username } = req.body;
+  
+    if (!username) {
+      res.status(400).send('Username is required');
+      return;
+    }
+  
+    const query = `
+        SELECT concat(first_name, ' ', last_name) as full_name, f2.flight_id, route_code, TIMESTAMPDIFF(MINUTE, f2.start_time, f2.end_time) AS flight_time, 
+        TIME(start_time) as starting_time, DATE(start_time) as flight_date
+        FROM pilot p join flight_assignment f1 using (pilot_id) join flight as f2 using (flight_id) join flight_route f3 using (route_id)
+        WHERE p.username = ? AND f2.start_time = (
+	        SELECT min(f.start_time) FROM flight f join flight_assignment fa using (flight_id) where fa.pilot_id = p.pilot_id);
+    `;
+  
+    // Execute the query
+    connection.query(query, [username], (err, results) => {
+      if (err) {
+        console.error('Error querying the database:', err);
+        res.status(500).send('Error querying the database');
+        return;
+      }
+  
+      // Send the results as JSON
+      res.json(results);
+    });
+  });
 
 
 
