@@ -32,6 +32,7 @@ Future<NextFlightDetails?> fetchNextFlightDetails(String username) async {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      print(data);
       return NextFlightDetails(
         flightId: data[0]['flight_id'],
         routeCode: data[0]['route_code'],
@@ -81,6 +82,7 @@ Future<UpcomingFlightDetails?> fetchUpcomingFlightDetails(
 
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
+      print(data);
       if (data.isNotEmpty) {
         data = data.sublist(1);
       }
