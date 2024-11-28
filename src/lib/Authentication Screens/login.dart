@@ -112,7 +112,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ElevatedButton(
                   onPressed: () {
                     // For now, just navigate to pilot dashboard
-                    Navigator.pushNamed(context, '/dashboard');
+                    // Navigator.pushNamed(context, '/dashboard');
+                    Navigator.pushNamed(context, '/flight_risk');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2194F2),

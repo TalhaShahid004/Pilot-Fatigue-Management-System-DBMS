@@ -6,6 +6,7 @@ import 'Authentication Screens/login.dart';
 import 'Authentication Screens/signup.dart';
 import 'Pilot Screens/dashboard.dart';
 import 'Pilot Screens/flight_assessment.dart';
+import 'Operations Screens/dashboard.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,6 +47,7 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignUpScreen(),
         '/dashboard': (context) => const DashboardScreen(),
         '/flight_assessment': (context) => const FlightAssessmentScreen(),
+        '/flight_risk': (context) => const OperationsDashboardScreen(),
       },
     );
   }
