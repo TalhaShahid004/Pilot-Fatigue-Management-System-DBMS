@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'flight_assessment.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -23,7 +24,7 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              _buildNextFlightCard(),
+              _buildNextFlightCard(context),
               _buildUpcomingFlightsSection(),
             ],
           ),
@@ -32,7 +33,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNextFlightCard() {
+  Widget _buildNextFlightCard(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Container(
@@ -142,7 +143,7 @@ class DashboardScreen extends StatelessWidget {
               child: Center(
                 child: ElevatedButton(
                   onPressed: () {
-                    // Handle fatigue assessment
+                    Navigator.pushNamed(context, '/flight_assessment');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1C810F),

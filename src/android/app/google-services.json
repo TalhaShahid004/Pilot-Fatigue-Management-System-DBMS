@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "869193536706",
+    "project_id": "pfms-a8d4c",
+    "storage_bucket": "pfms-a8d4c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:869193536706:android:281e02e7dc241056e4575b",
+        "android_client_info": {
+          "package_name": "io.dbs.pfms"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvtRPpJXS43Q40AyLPpOwUMTYtBgpDcys"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
