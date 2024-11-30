@@ -6,7 +6,14 @@ import 'Authentication Screens/login.dart';
 import 'Authentication Screens/signup.dart';
 import 'Pilot Screens/dashboard.dart';
 import 'Pilot Screens/flight_assessment.dart';
+
 import 'Operations Screens/dashboard.dart';
+import 'Operations Screens/flight_details_operations.dart';
+import 'Operations Screens/fatigue_details.dart';
+import 'Operations Screens/manage_flight.dart';
+import 'Operations Screens/Flight_Lists/critical_flights.dart';
+import 'Operations Screens/Flight_Lists/moderate_flights.dart';
+import 'Operations Screens/Flight_Lists/healthy_flights.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 
@@ -51,6 +58,14 @@ class MyApp extends StatelessWidget {
         '/dashboard': (context) => const DashboardScreen(),
         '/flight_assessment': (context) => const FlightAssessmentScreen(),
         '/flight_risk': (context) => const OperationsDashboardScreen(),
+        '/critical_risk_flights': (context) =>
+            const CriticalRiskFlightsScreen(),
+        '/moderate_risk_flights': (context) =>
+            const ModerateRiskFlightsScreen(),
+        '/healthy_risk_flights': (context) => const HealthyRiskFlightsScreen(),
+        '/flight_details_operations': (context) => const FlightDetailsScreen(),
+        '/fatigue_details': (context) => const FatigueDetailsScreen(),
+        '/manage_flight': (context) => const ManageFlightScreen(),
       },
     );
   }
