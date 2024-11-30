@@ -36,53 +36,110 @@ class DataPopulationUtil {
   }
 
   // Populate Flights
-  Future<void> populateFlights() async {
-    // Create flights for next 7 days
+ Future<void> populateFlights() async {
     final now = DateTime.now();
     final flights = [];
+    final criticalFlights = [];
+    final moderateFlights = [];
+    final healthyFlights = [];
 
-    // Morning KHI-ISB-KHI rotation
+    // Sample pilot data
+    final pilots = [
+      {'pilotId': 'P1', 'name': 'John Smith', 'role': 'Captain', 'fatigueScore': 75},
+      {'pilotId': 'P2', 'name': 'Sarah Johnson', 'role': 'Co-Pilot', 'fatigueScore': 82},
+      {'pilotId': 'P3', 'name': 'Mike Brown', 'role': 'Captain', 'fatigueScore': 65},
+      {'pilotId': 'P4', 'name': 'Lisa Davis', 'role': 'Co-Pilot', 'fatigueScore': 70},
+    ];
+
+    // Risk categories to rotate through
+    final riskCategories = ['Critical', 'Moderate', 'Healthy'];
+    int riskIndex = 0;
+
     for (int i = 0; i < 7; i++) {
       final date = now.add(Duration(days: i));
       
-      // KHI to ISB (Morning)
-      flights.add({
-        'flightId': 'F${i}A1',
-        'routeId': 'PK1',
-        'flightDate': date,
-        'startTime': DateTime(date.year, date.month, date.day, 7, 0),
-        'endTime': DateTime(date.year, date.month, date.day, 9, 0),
-        'riskCategory': 'Healthy',  // Healthy string for now
-        'status': 'Scheduled'
-      });
+      // Create three flights per day with different routes
+      final dailyFlights = [
+        {
+          'flightId': 'F${i}A1',
+          'flightNumber': 'PK301',
+          'route': 'KHI→ISB',
+          'startTime': DateTime(date.year, date.month, date.day, 7, 0),
+          'pilots': [
+            pilots[0],
+            pilots[1],
+          ],
+          'status': 'Scheduled',
+        },
+        {
+          'flightId': 'F${i}A2',
+          'flightNumber': 'PK302',
+          'route': 'ISB→KHI',
+          'startTime': DateTime(date.year, date.month, date.day, 10, 0),
+          'pilots': [
+            pilots[2],
+            pilots[3],
+          ],
+          'status': 'Scheduled',
+        },
+        {
+          'flightId': 'F${i}B1',
+          'flightNumber': 'PK785',
+          'route': 'ISB→DXB',
+          'startTime': DateTime(date.year, date.month, date.day, 18, 0),
+          'pilots': [
+            pilots[0],
+            pilots[3],
+          ],
+          'status': 'Scheduled',
+        },
+      ];
 
-      // ISB to KHI (Morning Return)
-      flights.add({
-        'flightId': 'F${i}A2',
-        'routeId': 'PK2',
-        'flightDate': date,
-        'startTime': DateTime(date.year, date.month, date.day, 10, 0),
-        'endTime': DateTime(date.year, date.month, date.day, 12, 0),
-        'riskCategory': 'Healthy',  
-        'status': 'Scheduled'
-      });
+      // Distribute flights to risk categories
+      for (var j = 0; j < dailyFlights.length; j++) {
+        final flight = dailyFlights[j];
+        final riskCategory = riskCategories[(riskIndex + j) % 3];
+        
+        // Add to main flights collection
+        flights.add({
+          ...flight,
+          'riskCategory': riskCategory,
+        });
 
-      // KHI to DXB (Evening)
-      flights.add({
-        'flightId': 'F${i}B1',
-        'routeId': 'PK5',
-        'flightDate': date,
-        'startTime': DateTime(date.year, date.month, date.day, 18, 0),
-        'endTime': DateTime(date.year, date.month, date.day, 20, 30),
-        'riskCategory': 'Healthy',  
-        'status': 'Scheduled'
-      });
+        // Add to specific risk category collection
+        switch (riskCategory) {
+          case 'Critical':
+            criticalFlights.add(flight);
+            break;
+          case 'Moderate':
+            moderateFlights.add(flight);
+            break;
+          case 'Healthy':
+            healthyFlights.add(flight);
+            break;
+        }
+      }
+      
+      riskIndex++;
     }
 
+    // Populate main flights collection
     for (var flight in flights) {
       await _firestore.collection('flights').doc(flight['flightId']).set(flight);
     }
+
+    // Populate risk-specific collections
+    for (var flight in criticalFlights) {
+      await _firestore.collection('criticalFlights').doc(flight['flightId']).set(flight);
+    }
+    for (var flight in moderateFlights) {
+      await _firestore.collection('moderateFlights').doc(flight['flightId']).set(flight);
+    }
+    for (var flight in healthyFlights) {
+      await _firestore.collection('healthyFlights').doc(flight['flightId']).set(flight);
+    }
   }
+
 
   // Populate Flight Assignments
   Future<void> populateFlightAssignments() async {
@@ -136,14 +193,13 @@ class DataPopulationUtil {
     await updateOperationalMetrics();
   }   
 
-  Future<void> updateOperationalMetrics() async {
+Future<void> updateOperationalMetrics() async {
     final firestore = FirebaseFirestore.instance;
     
-    // Count flights by risk category
-    final flightsRef = firestore.collection('flights');
-    final criticalCount = (await flightsRef.where('riskCategory', isEqualTo: 'Critical').get()).size;
-    final moderateCount = (await flightsRef.where('riskCategory', isEqualTo: 'Moderate').get()).size;
-    final healthyCount = (await flightsRef.where('riskCategory', isEqualTo: 'Healthy').get()).size;
+    // Count flights in each risk category collection
+    final criticalCount = (await firestore.collection('criticalFlights').get()).size;
+    final moderateCount = (await firestore.collection('moderateFlights').get()).size;
+    final healthyCount = (await firestore.collection('healthyFlights').get()).size;
 
     // Update the metrics
     await firestore.collection('operationalMetrics').doc('PIA').set({
@@ -153,4 +209,5 @@ class DataPopulationUtil {
       'lastUpdated': FieldValue.serverTimestamp(),
     });
   }
+
 }
