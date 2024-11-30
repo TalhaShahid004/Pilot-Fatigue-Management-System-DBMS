@@ -9,6 +9,7 @@ import 'Pilot Screens/flight_assessment.dart';
 
 import 'Operations Screens/dashboard.dart';
 import 'Operations Screens/flight_details_operations.dart';
+import 'Operations Screens/fatigue_details.dart';
 import 'Operations Screens/Flight_Lists/critical_flights.dart';
 import 'Operations Screens/Flight_Lists/moderate_flights.dart';
 import 'Operations Screens/Flight_Lists/healthy_flights.dart';
@@ -59,6 +60,7 @@ class MyApp extends StatelessWidget {
             const ModerateRiskFlightsScreen(),
         '/healthy_risk_flights': (context) => const HealthyRiskFlightsScreen(),
         '/flight_details_operations': (context) => const FlightDetailsScreen(),
+        '/fatigue_details': (context) => const FatigueDetailsScreen(),
       },
     );
   }

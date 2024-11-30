@@ -61,13 +61,14 @@ class FlightDetailsScreen extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      // Navigate to Fatigue Details screen
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => FatigueDetailsScreen(),
-                        ),
-                      );
+                      // // Navigate to Fatigue Details screen
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (context) => FatigueDetailsScreen(),
+                      //   ),
+                      // );
+                      Navigator.pushNamed(context, '/fatigue_details');
                     },
                     child: const Text('Fatigue Details'),
                   ),
@@ -123,20 +124,20 @@ class FlightDetailsScreen extends StatelessWidget {
   }
 }
 
-class FatigueDetailsScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // Implement the Fatigue Details screen logic here
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Fatigue Details'),
-      ),
-      body: const Center(
-        child: Text('Fatigue Details Screen'),
-      ),
-    );
-  }
-}
+// class FatigueDetailsScreen extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     // Implement the Fatigue Details screen logic here
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text('Fatigue Details'),
+//       ),
+//       body: const Center(
+//         child: Text('Fatigue Details Screen'),
+//       ),
+//     );
+//   }
+// }
 
 class ManageFlightScreen extends StatelessWidget {
   @override
