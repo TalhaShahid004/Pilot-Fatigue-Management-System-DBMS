@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // If successful, navigate to the flight risk screen
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/flight_risk');
+        Navigator.pushReplacementNamed(context, '/dashboard');
       }
     } on FirebaseAuthException catch (e) {
       // Handle specific Firebase Auth errors
