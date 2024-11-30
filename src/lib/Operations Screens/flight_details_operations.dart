@@ -77,13 +77,14 @@ class FlightDetailsScreen extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      // Navigate to Manage Flight screen
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ManageFlightScreen(),
-                        ),
-                      );
+                      // // Navigate to Manage Flight screen
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (context) => ManageFlightScreen(),
+                      //   ),
+                      // );
+                      Navigator.pushNamed(context, '/manage_flight');
                     },
                     child: const Text('Manage Flight'),
                   ),
@@ -139,17 +140,17 @@ class FlightDetailsScreen extends StatelessWidget {
 //   }
 // }
 
-class ManageFlightScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // Implement the Manage Flight screen logic here
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manage Flight'),
-      ),
-      body: const Center(
-        child: Text('Manage Flight Screen'),
-      ),
-    );
-  }
-}
+// class ManageFlightScreen extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     // Implement the Manage Flight screen logic here
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text('Manage Flight'),
+//       ),
+//       body: const Center(
+//         child: Text('Manage Flight Screen'),
+//       ),
+//     );
+//   }
+// }
