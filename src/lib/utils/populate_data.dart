@@ -133,5 +133,24 @@ class DataPopulationUtil {
     await populateFlightRoutes();
     await populateFlights();
     await populateFlightAssignments();
+    await updateOperationalMetrics();
+  }   
+
+  Future<void> updateOperationalMetrics() async {
+    final firestore = FirebaseFirestore.instance;
+    
+    // Count flights by risk category
+    final flightsRef = firestore.collection('flights');
+    final criticalCount = (await flightsRef.where('riskCategory', isEqualTo: 'Critical').get()).size;
+    final moderateCount = (await flightsRef.where('riskCategory', isEqualTo: 'Moderate').get()).size;
+    final healthyCount = (await flightsRef.where('riskCategory', isEqualTo: 'Healthy').get()).size;
+
+    // Update the metrics
+    await firestore.collection('operationalMetrics').doc('PIA').set({
+      'criticalFlightsCount': criticalCount,
+      'moderateFlightsCount': moderateCount,
+      'healthyFlightsCount': healthyCount,
+      'lastUpdated': FieldValue.serverTimestamp(),
+    });
   }
 }

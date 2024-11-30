@@ -38,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacementNamed(context, '/dashboard');
           break;
         case UserRole.operations:
-          Navigator.pushReplacementNamed(context, '/operation_dashboard');
+          Navigator.pushReplacementNamed(context, '/flight_risk');
           break;
         case UserRole.admin:
           // Add admin route when implemented
