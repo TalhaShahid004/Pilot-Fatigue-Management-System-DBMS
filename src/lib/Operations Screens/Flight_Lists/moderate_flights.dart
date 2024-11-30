@@ -39,13 +39,14 @@ class ModerateRiskFlightsScreen extends StatelessWidget {
                       route: 'DXB→DOH',
                       flightRisk: 8.7,
                       onTap: () {
-                        // Navigate to the details screen for this flight
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const FlightDetailsScreen(),
-                          ),
-                        );
+                        // // Navigate to the details screen for this flight
+                        // Navigator.push(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //     builder: (context) => const FlightDetailsScreen(),
+                        //   ),
+                        // );
+                        Navigator.pushNamed(context, '/flight_details_operations');
                       },
                     ),
                     const SizedBox(height: 16),
@@ -54,13 +55,14 @@ class ModerateRiskFlightsScreen extends StatelessWidget {
                       route: 'LAX→SFO',
                       flightRisk: 8.1,
                       onTap: () {
-                        // Navigate to the details screen for this flight
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const FlightDetailsScreen(),
-                          ),
-                        );
+                        // // Navigate to the details screen for this flight
+                        // Navigator.push(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //     builder: (context) => const FlightDetailsScreen(),
+                        //   ),
+                        // );
+                        Navigator.pushNamed(context, '/flight_details_operations');
                       },
                     ),
                     const SizedBox(height: 16),
@@ -69,13 +71,14 @@ class ModerateRiskFlightsScreen extends StatelessWidget {
                       route: 'KHI→DXB',
                       flightRisk: 9.1,
                       onTap: () {
-                        // Navigate to the details screen for this flight
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const FlightDetailsScreen(),
-                          ),
-                        );
+                        // // Navigate to the details screen for this flight
+                        // Navigator.push(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //     builder: (context) => const FlightDetailsScreen(),
+                        //   ),
+                        // );
+                        Navigator.pushNamed(context, '/flight_details_operations');
                       },
                     ),
                   ],
@@ -142,28 +145,28 @@ class ModerateRiskFlightsScreen extends StatelessWidget {
   }
 }
 
-class FlightDetailsScreen extends StatelessWidget {
-  const FlightDetailsScreen({super.key});
+// class FlightDetailsScreen extends StatelessWidget {
+//   const FlightDetailsScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Flight Details'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            // Navigate back to the previous screen
-            Navigator.pop(context);
-          },
-        ),
-      ),
-      body: Center(
-        child: Text(
-          'Flight Details Screen',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text('Flight Details'),
+//         leading: IconButton(
+//           icon: const Icon(Icons.arrow_back),
+//           onPressed: () {
+//             // Navigate back to the previous screen
+//             Navigator.pop(context);
+//           },
+//         ),
+//       ),
+//       body: Center(
+//         child: Text(
+//           'Flight Details Screen',
+//           style: Theme.of(context).textTheme.headlineMedium,
+//         ),
+//       ),
+//     );
+//   }
+// }
