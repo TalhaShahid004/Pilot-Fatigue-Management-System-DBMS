@@ -28,6 +28,7 @@ class OperationsDashboardScreen extends StatelessWidget {
                 change: '5% increase',
                 onPressed: () {
                   // Handle critical risk button press
+                  Navigator.pushNamed(context, '/critical_risk_flights');
                 },
               ),
               const SizedBox(height: 16),
@@ -37,6 +38,7 @@ class OperationsDashboardScreen extends StatelessWidget {
                 change: '4% increase',
                 onPressed: () {
                   // Handle moderate risk button press
+                  Navigator.pushNamed(context, '/moderate_risk_flights');
                 },
               ),
               const SizedBox(height: 16),
@@ -46,6 +48,7 @@ class OperationsDashboardScreen extends StatelessWidget {
                 change: '2% decrease',
                 onPressed: () {
                   // Handle healthy risk button press
+                  Navigator.pushNamed(context, '/healthy_risk_flights');
                 },
               ),
             ],

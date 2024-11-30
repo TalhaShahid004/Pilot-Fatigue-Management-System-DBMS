@@ -6,7 +6,11 @@ import 'Authentication Screens/login.dart';
 import 'Authentication Screens/signup.dart';
 import 'Pilot Screens/dashboard.dart';
 import 'Pilot Screens/flight_assessment.dart';
+
 import 'Operations Screens/dashboard.dart';
+import 'Operations Screens/Flight_Lists/critical_flights.dart';
+import 'Operations Screens/Flight_Lists/moderate_flights.dart';
+import 'Operations Screens/Flight_Lists/healthy_flights.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,6 +52,11 @@ class MyApp extends StatelessWidget {
         '/dashboard': (context) => const DashboardScreen(),
         '/flight_assessment': (context) => const FlightAssessmentScreen(),
         '/flight_risk': (context) => const OperationsDashboardScreen(),
+        '/critical_risk_flights': (context) =>
+            const CriticalRiskFlightsScreen(),
+        '/moderate_risk_flights': (context) =>
+            const ModerateRiskFlightsScreen(),
+        '/healthy_risk_flights': (context) => const HealthyRiskFlightsScreen(),
       },
     );
   }
