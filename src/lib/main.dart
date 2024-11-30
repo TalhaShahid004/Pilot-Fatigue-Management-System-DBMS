@@ -7,10 +7,13 @@ import 'Authentication Screens/signup.dart';
 import 'Pilot Screens/dashboard.dart';
 import 'Pilot Screens/flight_assessment.dart';
 import 'Operations Screens/dashboard.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 

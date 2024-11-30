@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "869193536706",
-    "project_id": "pfms-a8d4c",
-    "storage_bucket": "pfms-a8d4c.firebasestorage.app"
+    "project_number": "142995972429",
+    "project_id": "pilot-fatigue-management",
+    "storage_bucket": "pilot-fatigue-management.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:869193536706:android:281e02e7dc241056e4575b",
+        "mobilesdk_app_id": "1:142995972429:android:341aa1455137221ad5d704",
         "android_client_info": {
-          "package_name": "io.dbs.pfms"
+          "package_name": "com.example.flutter_application_1"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDvtRPpJXS43Q40AyLPpOwUMTYtBgpDcys"
+          "current_key": "AIzaSyCFBJ5XbtRmwpLUVCiNS-z6sd9yd0-RU8M"
         }
       ],
       "services": {
