@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/utils/populate_data.dart';
 
 class OperationsDashboardScreen extends StatelessWidget {
   const OperationsDashboardScreen({super.key});
@@ -7,15 +8,20 @@ class OperationsDashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flight Risk Overview'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            // Navigate back to the previous screen
-            Navigator.pop(context);
-          },
-        ),
-      ),
+  title: const Text('Flight Risk Overview'),
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.add),
+      onPressed: () async {
+        final populator = DataPopulationUtil();
+        await populator.populateAll();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Data populated successfully')),
+        );
+      },
+    ),
+  ],
+),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

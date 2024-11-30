@@ -27,7 +27,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _experienceController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-
+final TextEditingController _firstNameController = TextEditingController();
+final TextEditingController _lastNameController = TextEditingController();
   @override
   void dispose() {
     _emailController.dispose();
@@ -36,6 +37,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _experienceController.dispose();
     _dateController.dispose();
     _phoneController.dispose();
+    _firstNameController.dispose();
+_lastNameController.dispose();
     super.dispose();
   }
 
@@ -90,8 +93,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       // Store additional user data in Firestore
-      await _firestore.collection('pilots').doc(userCredential.user!.uid).set({
-        'email': _emailController.text.trim(),
+      await _firestore.collection('pilots').doc(_emailController.text.trim()).set({
+          'email': _emailController.text.trim(),
+        'firstName': _firstNameController.text.trim(),
+        'lastName': _lastNameController.text.trim(),
         'licenseNumber': _licenseController.text,
         'experience': _experienceController.text,
         'dateOfBirth': _dateController.text,
@@ -99,9 +104,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/dashboard');
-      }
+     // Replace it with this:
+if (mounted) {
+    // Show a success message (optional)
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Account created successfully! Please log in.'),
+            backgroundColor: Color(0xFF2194F2),
+        ),
+    );
+    // Navigate to login screen
+    Navigator.pushReplacementNamed(context, '/login');
+}
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = _getMessageFromErrorCode(e.code);
@@ -176,6 +190,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       return null;
                     },
                   ),
+                  
+                  // First Name field
+_buildFormField(
+  label: 'First Name',
+  controller: _firstNameController,
+  hintText: 'Enter your first name',
+  validator: (value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your first name';
+    }
+    return null;
+  },
+),
+
+// Last Name field
+_buildFormField(
+  label: 'Last Name',
+  controller: _lastNameController,
+  hintText: 'Enter your last name',
+  validator: (value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your last name';
+    }
+    return null;
+  },
+),
                   
                   // Password field
                   _buildFormField(

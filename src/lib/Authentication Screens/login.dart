@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,19 +12,12 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final AuthService _authService = AuthService();
   bool _obscurePassword = true;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   bool _isLoading = false;
   String? _errorMessage;
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  // Handle login with Firebase
   Future<void> _handleLogin() async {
     setState(() {
       _isLoading = true;
@@ -31,33 +25,33 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Validate email and password are not empty
-      if (_emailController.text.trim().isEmpty || _passwordController.text.isEmpty) {
-        throw 'Please fill in all fields';
-      }
-
-      // Attempt to sign in with Firebase
-      await _auth.signInWithEmailAndPassword(
+      final UserRole role = await _authService.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
-      // If successful, navigate to the flight risk screen
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/flight_risk');
+      if (!mounted) return;
+
+      // Navigate based on user role
+      switch (role) {
+        case UserRole.pilot:
+          Navigator.pushReplacementNamed(context, '/dashboard');
+          break;
+        case UserRole.operations:
+          Navigator.pushReplacementNamed(context, '/flight_risk');
+          break;
+        case UserRole.admin:
+          // Add admin route when implemented
+          Navigator.pushReplacementNamed(context, '/admin_dashboard');
+          break;
+        case UserRole.unknown:
+          throw 'Unable to determine user role';
       }
-    } on FirebaseAuthException catch (e) {
-      // Handle specific Firebase Auth errors
-      setState(() {
-        _errorMessage = _getMessageFromErrorCode(e.code);
-      });
     } catch (e) {
-      // Handle other errors
       setState(() {
         _errorMessage = e.toString();
       });
     } finally {
-      // Reset loading state if the widget is still mounted
       if (mounted) {
         setState(() {
           _isLoading = false;
