@@ -17,13 +17,30 @@ import 'Operations Screens/Flight_Lists/moderate_flights.dart';
 import 'Operations Screens/Flight_Lists/healthy_flights.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  print('before firebase initialization');
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await Firebase.initializeApp();
+  print('firebase initialized');
   runApp(const MyApp());
 }
+
+// void main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
+//   print('before firebase initialization');
+  
+//   try {
+//     await Firebase.initializeApp();
+//     print('firebase initialized');
+//   } catch (e) {
+//     print('Firebase initialization error: $e');
+//   }
+//   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+//   runApp(const MyApp());
+// }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

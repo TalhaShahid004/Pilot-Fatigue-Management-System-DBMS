@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/Pilot%20Screens/profile.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 
-
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
@@ -237,7 +236,7 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(5.0),
               child: Center(
                 child: ElevatedButton(
                   onPressed: () {
@@ -251,7 +250,32 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   ),
                   child: const Text(
-                    'Complete Fatigue Assessment',
+                    'Fatigue Assessment',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(5.0),
+              child: Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/flight_assessment');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 10, 230, 241),
+                    minimumSize: const Size(196, 38),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Fatigue Mitigation Advice',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,

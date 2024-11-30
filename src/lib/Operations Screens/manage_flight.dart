@@ -85,6 +85,8 @@ class ManageFlightScreen extends StatelessWidget {
 }
 
 class ReassignPilotScreen extends StatelessWidget {
+  const ReassignPilotScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     // Implement the Reassign Pilot screen logic here
@@ -92,7 +94,7 @@ class ReassignPilotScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Reassign Pilot'),
       ),
-      body: Center(
+      body: const Center(
         child: Text('Reassign Pilot Screen'),
       ),
     );
@@ -100,6 +102,8 @@ class ReassignPilotScreen extends StatelessWidget {
 }
 
 class AdjustScheduleScreen extends StatelessWidget {
+  const AdjustScheduleScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     // Implement the Adjust Schedule screen logic here
@@ -107,7 +111,7 @@ class AdjustScheduleScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Adjust Schedule'),
       ),
-      body: Center(
+      body: const Center(
         child: Text('Adjust Schedule Screen'),
       ),
     );
