@@ -6,9 +6,12 @@ import 'package:flutter_application_1/Pilot%20Screens/profile.dart';
 import 'Authentication Screens/login.dart';
 import 'Authentication Screens/signup.dart';
 import 'Pilot Screens/dashboard.dart';
-import 'Pilot Screens/flight_assessment.dart';
+import 'Pilot Screens/fatigue_assessment.dart';
+import 'Pilot Screens/fatigue_mitigation.dart';
+import 'Pilot Screens/flight_details_pilot.dart';
 
-import 'Operations Screens/dashboard.dart';
+
+import 'Operations Screens/operationDashboard.dart';
 import 'Operations Screens/operationProfile.dart';
 import 'Operations Screens/flight_details_operations.dart';
 import 'Operations Screens/fatigue_details.dart';
@@ -85,6 +88,10 @@ class MyApp extends StatelessWidget {
         '/manage_flight': (context) => const ManageFlightScreen(),
         '/profile': (context) => const ProfileScreen(),
         '/operation_profile': (context) => const OperationsProfileScreen(),
+        '/operation_dashboard': (context) => const OperationsDashboardScreen(),
+        '/flight_details_pilot': (context) => const PilotFlightDetailsScreen(),
+        
+
 
 
       },

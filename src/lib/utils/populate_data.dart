@@ -57,132 +57,132 @@ DateTime calculateEndTime(DateTime startTime, String departureAirport, String ar
 }
 
   // Populate Flights
- Future<void> populateFlights() async {
-    final now = DateTime.now();
-    final flights = [];
-    final criticalFlights = [];
-    final moderateFlights = [];
-    final healthyFlights = [];
+Future<void> populateFlights() async {
+  final now = DateTime.now();
+  final flights = [];
+  final criticalFlights = [];
+  final moderateFlights = [];
+  final healthyFlights = [];
 
-    // Sample pilot data
-    final pilots = [
-      {'pilotId': 'P1', 'name': 'John Smith', 'role': 'Captain', 'fatigueScore': 75},
-      {'pilotId': 'P2', 'name': 'Sarah Johnson', 'role': 'Co-Pilot', 'fatigueScore': 82},
-      {'pilotId': 'P3', 'name': 'Mike Brown', 'role': 'Captain', 'fatigueScore': 65},
-      {'pilotId': 'P4', 'name': 'Lisa Davis', 'role': 'Co-Pilot', 'fatigueScore': 70},
+  // Fetch real pilot data from Firebase
+  final pilotDocs = await _firestore.collection('pilots').get();
+  final pilots = await Future.wait(pilotDocs.docs.map((doc) async {
+    return {
+      'pilotId': doc.data()['email'],
+      'name': '${doc.data()['firstName']} ${doc.data()['lastName']}',
+      'role': 'Captain', // Will be assigned dynamically
+    };
+  }));
+
+  // Risk categories to rotate through
+  final riskCategories = ['Critical', 'Moderate', 'Healthy'];
+  int riskIndex = 0;
+
+  for (int i = 0; i < 7; i++) {
+    final date = now.add(Duration(days: i));
+    
+    final dailyFlights = [
+      {
+        'flightId': 'F${i}A1',
+        'flightNumber': 'PK301',
+        'route': 'KHI→ISB',
+        'startTime': DateTime(date.year, date.month, date.day, 7, 0),
+        'endTime': calculateEndTime(
+          DateTime(date.year, date.month, date.day, 7, 0),
+          'KHI',
+          'ISB',
+          120
+        ),
+        'duration': 120,
+        'pilots': [
+          {...pilots[0], 'role': 'Captain'},
+          {...pilots[1], 'role': 'Co-Pilot'},
+        ],
+        'status': 'Scheduled',
+      },
+      {
+        'flightId': 'F${i}A2',
+        'flightNumber': 'PK302',
+        'route': 'ISB→KHI',
+        'startTime': DateTime(date.year, date.month, date.day, 10, 0),
+        'endTime': calculateEndTime(
+          DateTime(date.year, date.month, date.day, 10, 0),
+          'ISB',
+          'KHI',
+          120
+        ),
+        'duration': 120,
+        'pilots': [
+          {...pilots[2], 'role': 'Captain'},
+          {...pilots[3], 'role': 'Co-Pilot'},
+        ],
+        'status': 'Scheduled',
+      },
+      {
+        'flightId': 'F${i}B1',
+        'flightNumber': 'PK785',
+        'route': 'ISB→DXB',
+        'startTime': DateTime(date.year, date.month, date.day, 18, 0),
+        'endTime': calculateEndTime(
+          DateTime(date.year, date.month, date.day, 18, 0),
+          'ISB',
+          'DXB',
+          210
+        ),
+        'duration': 210,
+        'pilots': [
+          {...pilots[0], 'role': 'Captain'},
+          {...pilots[3], 'role': 'Co-Pilot'},
+        ],
+        'status': 'Scheduled',
+      },
     ];
 
-    // Risk categories to rotate through
-    final riskCategories = ['Critical', 'Moderate', 'Healthy'];
-    int riskIndex = 0;
-
-    for (int i = 0; i < 7; i++) {
-      final date = now.add(Duration(days: i));
+    // Distribute flights to risk categories
+    for (var j = 0; j < dailyFlights.length; j++) {
+      final flight = dailyFlights[j];
+      final riskCategory = riskCategories[(riskIndex + j) % 3];
       
-      // Create three flights per day with different routes
-     final dailyFlights = [
-    {
-      'flightId': 'F${i}A1',
-      'flightNumber': 'PK301',
-      'route': 'KHI→ISB',
-      'startTime': DateTime(date.year, date.month, date.day, 7, 0),
-      'endTime': calculateEndTime(
-        DateTime(date.year, date.month, date.day, 7, 0),
-        'KHI',
-        'ISB',
-        120  // 2 hours = 120 minutes
-      ),
-      'duration': 120,
-      'pilots': [
-        pilots[0],
-        pilots[1],
-      ],
-      'status': 'Scheduled',
-    },
-    {
-      'flightId': 'F${i}A2',
-      'flightNumber': 'PK302',
-      'route': 'ISB→KHI',
-      'startTime': DateTime(date.year, date.month, date.day, 10, 0),
-      'endTime': calculateEndTime(
-        DateTime(date.year, date.month, date.day, 10, 0),
-        'ISB',
-        'KHI',
-        120  // 2 hours = 120 minutes
-      ),
-      'duration': 120,
-      'pilots': [
-        pilots[2],
-        pilots[3],
-      ],
-      'status': 'Scheduled',
-    },
-    {
-      'flightId': 'F${i}B1',
-      'flightNumber': 'PK785',
-      'route': 'ISB→DXB',
-      'startTime': DateTime(date.year, date.month, date.day, 18, 0),
-      'endTime': calculateEndTime(
-        DateTime(date.year, date.month, date.day, 18, 0),
-        'ISB',
-        'DXB',
-        210  // 3.5 hours = 210 minutes
-      ),
-      'duration': 210,
-      'pilots': [
-        pilots[0],
-        pilots[3],
-      ],
-      'status': 'Scheduled',
-    },
-];
-      // Distribute flights to risk categories
-      for (var j = 0; j < dailyFlights.length; j++) {
-        final flight = dailyFlights[j];
-        final riskCategory = riskCategories[(riskIndex + j) % 3];
-        
-        // Add to main flights collection
-        flights.add({
-          ...flight,
-          'riskCategory': riskCategory,
-        });
+      // Add to main flights collection
+      flights.add({
+        ...flight,
+        'riskCategory': riskCategory,
+      });
 
-        // Add to specific risk category collection
-        switch (riskCategory) {
-          case 'Critical':
-            criticalFlights.add(flight);
-            break;
-          case 'Moderate':
-            moderateFlights.add(flight);
-            break;
-          case 'Healthy':
-            healthyFlights.add(flight);
-            break;
-        }
+      // Add to specific risk category collection
+      final flightCopy = Map<String, dynamic>.from(flight);
+      switch (riskCategory) {
+        case 'Critical':
+          criticalFlights.add(flightCopy);
+          break;
+        case 'Moderate':
+          moderateFlights.add(flightCopy);
+          break;
+        case 'Healthy':
+          healthyFlights.add(flightCopy);
+          break;
       }
-      
-      riskIndex++;
     }
-
-    // Populate main flights collection
-    for (var flight in flights) {
-      await _firestore.collection('flights').doc(flight['flightId']).set(flight);
-    }
-
-    // Populate risk-specific collections
-    for (var flight in criticalFlights) {
-      await _firestore.collection('criticalFlights').doc(flight['flightId']).set(flight);
-    }
-    for (var flight in moderateFlights) {
-      await _firestore.collection('moderateFlights').doc(flight['flightId']).set(flight);
-    }
-    for (var flight in healthyFlights) {
-      await _firestore.collection('healthyFlights').doc(flight['flightId']).set(flight);
-    }
-
-  
+    
+    riskIndex++;
   }
 
+  // Populate main flights collection
+  for (var flight in flights) {
+    await _firestore.collection('flights').doc(flight['flightId']).set(flight);
+  }
+
+  // Populate risk-specific collections
+  for (var flight in criticalFlights) {
+    await _firestore.collection('criticalFlights').doc(flight['flightId']).set(flight);
+  }
+  for (var flight in moderateFlights) {
+    await _firestore.collection('moderateFlights').doc(flight['flightId']).set(flight);
+  }
+  for (var flight in healthyFlights) {
+    await _firestore.collection('healthyFlights').doc(flight['flightId']).set(flight);
+  }
+}
 
   // Populate Flight Assignments
   Future<void> populateFlightAssignments() async {

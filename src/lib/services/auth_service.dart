@@ -164,4 +164,27 @@ Future<void> updateOperationsProfile({
     'updatedAt': FieldValue.serverTimestamp(),
   });
 }
+
+Future<String?> getCurrentPilotId() async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+
+    try {
+      final pilotsQuery = await _firestore
+          .collection('pilots')
+          .where('email', isEqualTo: user.email)
+          .limit(1)
+          .get();
+
+      if (pilotsQuery.docs.isNotEmpty) {
+        return pilotsQuery.docs.first.get('pilotId');  // Assuming each pilot document has a pilotId field
+      }
+      return null;
+    } catch (e) {
+      print('Error getting pilot ID: $e');
+      return null;
+    }
+  }
 }
+
+
