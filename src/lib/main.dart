@@ -10,7 +10,6 @@ import 'Pilot Screens/fatigue_assessment.dart';
 import 'Pilot Screens/fatigue_mitigation.dart';
 import 'Pilot Screens/flight_details_pilot.dart';
 
-
 import 'Operations Screens/operationDashboard.dart';
 import 'Operations Screens/operationDashboard.dart';
 import 'Operations Screens/operationProfile.dart';
@@ -95,10 +94,6 @@ class MyApp extends StatelessWidget {
         '/operation_profile': (context) => const OperationsProfileScreen(),
         '/operation_dashboard': (context) => const OperationsDashboardScreen(),
         '/flight_details_pilot': (context) => const PilotFlightDetailsScreen(),
-        
-
-
-
         '/admin_dashboard': (context) => const AdminDashboardScreen(),
       },
     );
