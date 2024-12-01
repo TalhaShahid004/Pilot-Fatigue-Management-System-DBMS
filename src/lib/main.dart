@@ -9,6 +9,7 @@ import 'Pilot Screens/dashboard.dart';
 import 'Pilot Screens/flight_assessment.dart';
 
 import 'Operations Screens/dashboard.dart';
+import 'Operations Screens/operationProfile.dart';
 import 'Operations Screens/flight_details_operations.dart';
 import 'Operations Screens/fatigue_details.dart';
 import 'Operations Screens/manage_flight.dart';
@@ -82,7 +83,9 @@ class MyApp extends StatelessWidget {
         '/flight_details_operations': (context) => const FlightDetailsScreen(),
         '/fatigue_details': (context) => const FatigueDetailsScreen(),
         '/manage_flight': (context) => const ManageFlightScreen(),
-          '/profile': (context) => const ProfileScreen(),
+        '/profile': (context) => const ProfileScreen(),
+        '/operation_profile': (context) => const OperationsProfileScreen(),
+
 
       },
     );

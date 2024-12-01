@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/Operations%20Screens/operationProfile.dart';
+import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/utils/populate_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_1/Operations Screens/operationProfile.dart';
+
 
 class OperationsDashboardScreen extends StatelessWidget {
   const OperationsDashboardScreen({super.key});
@@ -34,6 +38,7 @@ class OperationsDashboardScreen extends StatelessWidget {
           ),
         ],
       ),
+      drawer: _buildDrawer(context),
       body: SafeArea(
         child: StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance
@@ -106,6 +111,99 @@ class OperationsDashboardScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildDrawer(BuildContext context) {
+  final AuthService _authService = AuthService();
+
+  return Drawer(
+    child: Container(
+      color: const Color(0xFF21384A),
+      child: Column(
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(
+              color: Color(0xFF141414),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Color(0xFF2194F2),
+                  child: Icon(
+                    Icons.person,
+                    size: 40,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                FutureBuilder(
+                  future: _authService.getCurrentUserEmail(),
+                  builder: (context, snapshot) {
+                    return Text(
+                      snapshot.data ?? 'Operations',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.home, color: Colors.white),
+            title: const Text(
+              'Dashboard',
+              style: TextStyle(color: Colors.white),
+            ),
+            onTap: () {
+              Navigator.pop(context); // Close drawer
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.person, color: Colors.white),
+            title: const Text(
+              'Profile',
+              style: TextStyle(color: Colors.white),
+            ),
+            onTap: () {
+              Navigator.pop(context); // Close drawer
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const OperationsProfileScreen(),
+                ),
+              );
+            },
+          ),
+          const Spacer(), // Pushes the logout button to the bottom
+          Container(
+            decoration: const BoxDecoration(
+              border: Border(
+                top: BorderSide(color: Colors.white24),
+              ),
+            ),
+            child: ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text(
+                'Logout',
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () async {
+                await _authService.signOut();
+                if (context.mounted) {
+                  Navigator.pushReplacementNamed(context, '/login');
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
   Widget _buildRiskButton({
     required String label,
     required int flightCount,

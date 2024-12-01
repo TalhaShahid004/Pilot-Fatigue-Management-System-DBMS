@@ -88,24 +88,52 @@ class AuthService {
   }
 
   // Get current user data from Firestore
-  Future<Map<String, dynamic>> getCurrentUserData() async {
-    final user = _auth.currentUser;
-    if (user == null) throw 'No user logged in';
+// In auth_service.dart
+Future<Map<String, dynamic>> getCurrentUserData() async {
+  final user = _auth.currentUser;
+  if (user == null) throw 'No user logged in';
 
-    // Query the pilots collection to find the document with matching email
-    final querySnapshot = await _firestore
-        .collection('pilots')
-        .where('email', isEqualTo: user.email)
-        .limit(1)
-        .get();
+  // Check operations collection first
+  final operationsDoc = await _firestore
+      .collection('operations')
+      .doc(user.email)
+      .get();
 
-    if (querySnapshot.docs.isEmpty) {
-      throw 'User data not found';
-    }
-
-    return querySnapshot.docs.first.data();
+  if (operationsDoc.exists) {
+    // Return the data and include the document ID (email) as part of the map
+    return {
+      'email': operationsDoc.id,  // Add the document ID as email
+      ...operationsDoc.data() ?? {},
+    };
   }
 
+  // Rest of the method remains the same...
+  final pilotsQuery = await _firestore
+      .collection('pilots')
+      .where('email', isEqualTo: user.email)
+      .limit(1)
+      .get();
+
+  if (pilotsQuery.docs.isNotEmpty) {
+    return pilotsQuery.docs.first.data();
+  }
+
+  throw 'User data not found';
+}
+// Also update the updateOperationsProfile method to use the correct collection
+Future<void> updateOperationsProfile({
+  required String firstName,
+  required String lastName,
+}) async {
+  final user = _auth.currentUser;
+  if (user == null) throw 'No user logged in';
+  
+  await _firestore.collection('operations').doc(user.email).update({
+    'firstName': firstName,
+    'lastName': lastName,
+    'updatedAt': FieldValue.serverTimestamp(),
+  });
+}
   // Update pilot profile
   Future<void> updatePilotProfile({
   required String licenseNumber,
