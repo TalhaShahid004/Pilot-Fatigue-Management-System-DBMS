@@ -73,11 +73,12 @@ class _LoginScreenState extends State<LoginScreen> {
       await _auth.sendPasswordResetEmail(
         email: _emailController.text.trim(),
       );
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Password reset email sent. Please check your inbox.'),
+            content:
+                Text('Password reset email sent. Please check your inbox.'),
             backgroundColor: Colors.green,
           ),
         );
@@ -129,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Email/Username Field
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -153,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Password Field
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -175,7 +176,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                          _obscurePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                           color: const Color(0xFF8FB0CC),
                         ),
                         onPressed: () {
@@ -204,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                 const SizedBox(height: 8),
-                
+
                 // Forgot Password Button
                 TextButton(
                   onPressed: _handleForgotPassword,
@@ -217,9 +220,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Login Button
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleLogin,
@@ -229,7 +232,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    disabledBackgroundColor: const Color(0xFF2194F2).withOpacity(0.6),
+                    disabledBackgroundColor:
+                        const Color(0xFF2194F2).withOpacity(0.6),
                   ),
                   child: _isLoading
                       ? const SizedBox(
@@ -249,9 +253,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 // Sign Up Button
                 TextButton(
                   onPressed: () {

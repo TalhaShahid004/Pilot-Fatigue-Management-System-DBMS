@@ -12,6 +12,7 @@ import 'Pilot Screens/flight_details_pilot.dart';
 
 
 import 'Operations Screens/operationDashboard.dart';
+import 'Operations Screens/operationDashboard.dart';
 import 'Operations Screens/operationProfile.dart';
 import 'Operations Screens/flight_details_operations.dart';
 import 'Operations Screens/fatigue_details.dart';
@@ -19,6 +20,9 @@ import 'Operations Screens/manage_flight.dart';
 import 'Operations Screens/Flight_Lists/critical_flights.dart';
 import 'Operations Screens/Flight_Lists/moderate_flights.dart';
 import 'Operations Screens/Flight_Lists/healthy_flights.dart';
+
+import 'Admin Screens/admin_dashboard.dart';
+
 import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
@@ -33,7 +37,7 @@ void main() async {
 // void main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
 //   print('before firebase initialization');
-  
+
 //   try {
 //     await Firebase.initializeApp();
 //     print('firebase initialized');
@@ -44,7 +48,6 @@ void main() async {
 
 //   runApp(const MyApp());
 // }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -80,8 +83,10 @@ class MyApp extends StatelessWidget {
         '/dashboard': (context) => const DashboardScreen(),
         '/flight_assessment': (context) => const FlightAssessmentScreen(),
         '/flight_risk': (context) => const OperationsDashboardScreen(),
-        '/critical_risk_flights': (context) => const CriticalRiskFlightsScreen(),
-        '/moderate_risk_flights': (context) => const ModerateRiskFlightsScreen(),
+        '/critical_risk_flights': (context) =>
+            const CriticalRiskFlightsScreen(),
+        '/moderate_risk_flights': (context) =>
+            const ModerateRiskFlightsScreen(),
         '/healthy_risk_flights': (context) => const HealthyRiskFlightsScreen(),
         '/flight_details_operations': (context) => const FlightDetailsScreen(),
         '/fatigue_details': (context) => const FatigueDetailsScreen(),
@@ -94,6 +99,7 @@ class MyApp extends StatelessWidget {
 
 
 
+        '/admin_dashboard': (context) => const AdminDashboardScreen(),
       },
     );
   }
