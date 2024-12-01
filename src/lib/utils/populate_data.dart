@@ -22,18 +22,39 @@ class DataPopulationUtil {
   // Populate Flight Routes
   Future<void> populateFlightRoutes() async {
     final routes = [
-      {'routeId': 'PK1', 'flightCode': 'PK301', 'airlineId': 'PIA', 'departureAirport': 'KHI', 'arrivalAirport': 'ISB'},
-      {'routeId': 'PK2', 'flightCode': 'PK302', 'airlineId': 'PIA', 'departureAirport': 'ISB', 'arrivalAirport': 'KHI'},
-      {'routeId': 'PK3', 'flightCode': 'PK303', 'airlineId': 'PIA', 'departureAirport': 'KHI', 'arrivalAirport': 'LHE'},
-      {'routeId': 'PK4', 'flightCode': 'PK304', 'airlineId': 'PIA', 'departureAirport': 'LHE', 'arrivalAirport': 'KHI'},
-      {'routeId': 'PK5', 'flightCode': 'PK785', 'airlineId': 'PIA', 'departureAirport': 'ISB', 'arrivalAirport': 'DXB'},
-      {'routeId': 'PK6', 'flightCode': 'PK786', 'airlineId': 'PIA', 'departureAirport': 'DXB', 'arrivalAirport': 'ISB'},
+      {'routeId': 'PK1', 'flightCode': 'PK301', 'airlineId': 'PIA', 'departureAirport': 'KHI', 'arrivalAirport': 'ISB', 'duration': 120},
+      {'routeId': 'PK2', 'flightCode': 'PK302', 'airlineId': 'PIA', 'departureAirport': 'ISB', 'arrivalAirport': 'KHI', 'duration': 120},
+      {'routeId': 'PK3', 'flightCode': 'PK303', 'airlineId': 'PIA', 'departureAirport': 'KHI', 'arrivalAirport': 'LHE', 'duration': 90},
+      {'routeId': 'PK4', 'flightCode': 'PK304', 'airlineId': 'PIA', 'departureAirport': 'LHE', 'arrivalAirport': 'KHI', 'duration': 90},
+      {'routeId': 'PK5', 'flightCode': 'PK785', 'airlineId': 'PIA', 'departureAirport': 'ISB', 'arrivalAirport': 'DXB', 'duration': 210},
+      {'routeId': 'PK6', 'flightCode': 'PK786', 'airlineId': 'PIA', 'departureAirport': 'DXB', 'arrivalAirport': 'ISB', 'duration': 210},
     ];
 
     for (var route in routes) {
-      await _firestore.collection('flightRoutes').doc(route['routeId']).set(route);
+      await _firestore.collection('flightRoutes').doc(route['routeId'] as String?).set(route);
     }
   }
+
+DateTime calculateEndTime(DateTime startTime, String departureAirport, String arrivalAirport, int durationMinutes) {
+    // Get UTC offsets from the airports data structure
+    final Map<String, int> airportOffsets = {
+      'KHI': 5,
+      'ISB': 5,
+      'LHE': 5,
+      'DXB': 4,
+      'LHR': 0,
+    };
+    
+    // Calculate end time in departure timezone
+    DateTime endTimeUTC = startTime.add(Duration(minutes: durationMinutes));
+    
+    // Adjust for destination timezone
+    int destOffset = airportOffsets[arrivalAirport] ?? 0;
+    int srcOffset = airportOffsets[departureAirport] ?? 0;
+    int offsetDiff = destOffset - srcOffset;
+    
+    return endTimeUTC.add(Duration(hours: offsetDiff));
+}
 
   // Populate Flights
  Future<void> populateFlights() async {
@@ -59,42 +80,62 @@ class DataPopulationUtil {
       final date = now.add(Duration(days: i));
       
       // Create three flights per day with different routes
-      final dailyFlights = [
-        {
-          'flightId': 'F${i}A1',
-          'flightNumber': 'PK301',
-          'route': 'KHI→ISB',
-          'startTime': DateTime(date.year, date.month, date.day, 7, 0),
-          'pilots': [
-            pilots[0],
-            pilots[1],
-          ],
-          'status': 'Scheduled',
-        },
-        {
-          'flightId': 'F${i}A2',
-          'flightNumber': 'PK302',
-          'route': 'ISB→KHI',
-          'startTime': DateTime(date.year, date.month, date.day, 10, 0),
-          'pilots': [
-            pilots[2],
-            pilots[3],
-          ],
-          'status': 'Scheduled',
-        },
-        {
-          'flightId': 'F${i}B1',
-          'flightNumber': 'PK785',
-          'route': 'ISB→DXB',
-          'startTime': DateTime(date.year, date.month, date.day, 18, 0),
-          'pilots': [
-            pilots[0],
-            pilots[3],
-          ],
-          'status': 'Scheduled',
-        },
-      ];
-
+     final dailyFlights = [
+    {
+      'flightId': 'F${i}A1',
+      'flightNumber': 'PK301',
+      'route': 'KHI→ISB',
+      'startTime': DateTime(date.year, date.month, date.day, 7, 0),
+      'endTime': calculateEndTime(
+        DateTime(date.year, date.month, date.day, 7, 0),
+        'KHI',
+        'ISB',
+        120  // 2 hours = 120 minutes
+      ),
+      'duration': 120,
+      'pilots': [
+        pilots[0],
+        pilots[1],
+      ],
+      'status': 'Scheduled',
+    },
+    {
+      'flightId': 'F${i}A2',
+      'flightNumber': 'PK302',
+      'route': 'ISB→KHI',
+      'startTime': DateTime(date.year, date.month, date.day, 10, 0),
+      'endTime': calculateEndTime(
+        DateTime(date.year, date.month, date.day, 10, 0),
+        'ISB',
+        'KHI',
+        120  // 2 hours = 120 minutes
+      ),
+      'duration': 120,
+      'pilots': [
+        pilots[2],
+        pilots[3],
+      ],
+      'status': 'Scheduled',
+    },
+    {
+      'flightId': 'F${i}B1',
+      'flightNumber': 'PK785',
+      'route': 'ISB→DXB',
+      'startTime': DateTime(date.year, date.month, date.day, 18, 0),
+      'endTime': calculateEndTime(
+        DateTime(date.year, date.month, date.day, 18, 0),
+        'ISB',
+        'DXB',
+        210  // 3.5 hours = 210 minutes
+      ),
+      'duration': 210,
+      'pilots': [
+        pilots[0],
+        pilots[3],
+      ],
+      'status': 'Scheduled',
+    },
+];
       // Distribute flights to risk categories
       for (var j = 0; j < dailyFlights.length; j++) {
         final flight = dailyFlights[j];
@@ -138,6 +179,8 @@ class DataPopulationUtil {
     for (var flight in healthyFlights) {
       await _firestore.collection('healthyFlights').doc(flight['flightId']).set(flight);
     }
+
+  
   }
 
 

@@ -71,15 +71,20 @@ class HealthyRiskFlightsScreen extends StatelessWidget {
                     return ListView.builder(
                       itemCount: flights.length,
                       itemBuilder: (context, index) {
-                        final flightData = flights[index].data() as Map<String, dynamic>;
-                        final startTime = (flightData['startTime'] as Timestamp).toDate();
-                        final pilots = List<Map<String, dynamic>>.from(flightData['pilots'] ?? []);
-                        
+                        final flightData =
+                            flights[index].data() as Map<String, dynamic>;
+                        final startTime =
+                            (flightData['startTime'] as Timestamp).toDate();
+                        final pilots = List<Map<String, dynamic>>.from(
+                            flightData['pilots'] ?? []);
+
                         // Calculate average fatigue score
                         double avgFatigueScore = 0;
                         if (pilots.isNotEmpty) {
-                          final totalFatigue = pilots.fold(0.0, 
-                            (sum, pilot) => sum + (pilot['fatigueScore'] ?? 0));
+                          final totalFatigue = pilots.fold(
+                              0.0,
+                              (sum, pilot) =>
+                                  sum + (pilot['fatigueScore'] ?? 0));
                           avgFatigueScore = totalFatigue / pilots.length;
                         }
 
@@ -89,12 +94,13 @@ class HealthyRiskFlightsScreen extends StatelessWidget {
                               flightNumber: flightData['flightNumber'] ?? 'N/A',
                               route: flightData['route'] ?? 'N/A',
                               startTime: startTime,
-                              flightRisk: avgFatigueScore / 10, // Convert to 1-10 scale
+                              flightRisk:
+                                  avgFatigueScore / 10, // Convert to 1-10 scale
                               status: flightData['status'] ?? 'N/A',
                               onTap: () {
                                 Navigator.pushNamed(
                                   context,
-                                  '/flight_details_operations',
+                                  '/flight_details_operations', // This matches your route definition
                                   arguments: flights[index].id,
                                 );
                               },
