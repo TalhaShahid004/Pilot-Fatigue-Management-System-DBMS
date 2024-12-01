@@ -12,8 +12,41 @@ class FlightAssessmentScreen extends StatefulWidget {
 class _FlightAssessmentScreenState extends State<FlightAssessmentScreen> {
   final AuthService _authService = AuthService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late String flightId;
+  String? assignmentId;
   
-// Updated state variables with normalized scales
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      flightId = ModalRoute.of(context)?.settings.arguments as String;
+      await _fetchAssignmentId();
+    });
+  }
+
+  Future<void> _fetchAssignmentId() async {
+    try {
+      final userEmail = await _authService.getCurrentUserEmail();
+      if (userEmail == null) return;
+
+      final assignmentQuery = await _firestore
+          .collection('flightAssignments')
+          .where('flightId', isEqualTo: flightId)
+          .where('pilotId', isEqualTo: userEmail)
+          .limit(1)
+          .get();
+
+      if (assignmentQuery.docs.isNotEmpty) {
+        setState(() {
+          assignmentId = assignmentQuery.docs.first.id;
+        });
+      }
+    } catch (e) {
+      print('Error fetching assignment ID: $e');
+    }
+  }
+  
+  // Updated state variables with normalized scales
   double alertnessLevel = 4.0; // Scale 1-7
   double sleepQualityValue = 5.0;   // Scale 1-10
   double stressLevel = 5.0;    // Scale 1-10
@@ -58,9 +91,13 @@ class _FlightAssessmentScreenState extends State<FlightAssessmentScreen> {
                                    sleepQualityValue >= 4 ? 'Fair' :
                                    sleepQualityValue >= 2 ? 'Poor' : 'Very Poor';
 
-      final assessmentRef = await _firestore.collection('fatigueAssessments').add({
-        'pilotId': userEmail,
-        'flightId': 'CURRENT_FLIGHT_ID', // You'll need to pass this from the previous screen
+if (assignmentId == null) {
+  throw Exception('No assignment ID found for this flight');
+}
+
+await _firestore.collection('fatigueAssessments').doc(assignmentId).set({
+  'pilotId': userEmail,
+  'flightId': flightId,
         'score': _calculateFinalScore(),
         'timestamp': FieldValue.serverTimestamp(),
         'questions': {

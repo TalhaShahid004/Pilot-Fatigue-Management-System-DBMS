@@ -329,13 +329,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                         Text(
-  '${DateFormat('HH:mm').format(endTime)} - ${DateFormat('HH:mm').format(startTime)}',
-  style: TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w200,
-    color: Colors.white.withOpacity(0.8),
-  ),
-),
+                          '${DateFormat('HH:mm').format(endTime)} - ${DateFormat('HH:mm').format(startTime)}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w200,
+                            color: Colors.white.withOpacity(0.8),
+                          ),
+                        ),
                       ],
                     ),
                     Text(
@@ -373,7 +373,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               onPressed: () => Navigator.pushNamed(
                                 context,
                                 '/flight_assessment',
-                                arguments: nextFlight!['id'],
+                                arguments: nextFlight!['id'] as String,
                               ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF1C810F),

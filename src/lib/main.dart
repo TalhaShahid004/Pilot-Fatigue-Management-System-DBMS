@@ -10,7 +10,7 @@ import 'Pilot Screens/fatigue_assessment.dart';
 import 'Pilot Screens/flight_details_pilot.dart';
 
 import 'Operations Screens/operationDashboard.dart';
-import 'Operations Screens/operationDashboard.dart';
+
 import 'Operations Screens/operationProfile.dart';
 import 'Operations Screens/flight_details_operations.dart';
 import 'Operations Screens/fatigue_details.dart';
@@ -87,8 +87,7 @@ class MyApp extends StatelessWidget {
             const ModerateRiskFlightsScreen(),
         '/healthy_risk_flights': (context) => const HealthyRiskFlightsScreen(),
         '/flight_details_operations': (context) => const FlightDetailsScreen(),
-        '/fatigue_details': (context) => const FatigueDetailsScreen(),
-        '/manage_flight': (context) => const ManageFlightScreen(),
+        'fatigue_details': (context) => const FatigueDetailsScreen(flightId: 'PK301'),
         '/profile': (context) => const ProfileScreen(),
         '/operation_profile': (context) => const OperationsProfileScreen(),
         '/operation_dashboard': (context) => const OperationsDashboardScreen(),

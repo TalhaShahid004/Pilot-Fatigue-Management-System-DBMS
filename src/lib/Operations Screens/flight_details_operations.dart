@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_1/Operations%20Screens/fatigue_details.dart';
+import 'package:flutter_application_1/Operations%20Screens/manage_flight.dart';
 import 'package:intl/intl.dart';
 
 class FlightDetailsScreen extends StatelessWidget {
@@ -7,7 +9,8 @@ class FlightDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String flightId = ModalRoute.of(context)?.settings.arguments as String;
+    final String flightId =
+        ModalRoute.of(context)?.settings.arguments as String;
 
     return Scaffold(
       backgroundColor: const Color(0xFF141414),
@@ -35,17 +38,14 @@ class FlightDetailsScreen extends StatelessWidget {
         builder: (context, criticalSnapshot) {
           if (criticalSnapshot.hasError) {
             return const Center(
-              child: Text('Something went wrong', style: TextStyle(color: Colors.white)),
+              child: Text('Something went wrong',
+                  style: TextStyle(color: Colors.white)),
             );
           }
 
           if (criticalSnapshot.hasData && criticalSnapshot.data!.exists) {
             return _buildFlightDetails(
-              context, 
-              criticalSnapshot.data!, 
-              flightId,
-              'Critical'
-            );
+                context, criticalSnapshot.data!, flightId, 'Critical');
           }
 
           return StreamBuilder<DocumentSnapshot>(
@@ -56,11 +56,7 @@ class FlightDetailsScreen extends StatelessWidget {
             builder: (context, moderateSnapshot) {
               if (moderateSnapshot.hasData && moderateSnapshot.data!.exists) {
                 return _buildFlightDetails(
-                  context, 
-                  moderateSnapshot.data!, 
-                  flightId,
-                  'Moderate'
-                );
+                    context, moderateSnapshot.data!, flightId, 'Moderate');
               }
 
               return StreamBuilder<DocumentSnapshot>(
@@ -69,22 +65,21 @@ class FlightDetailsScreen extends StatelessWidget {
                     .doc(flightId)
                     .snapshots(),
                 builder: (context, healthySnapshot) {
-                  if (healthySnapshot.connectionState == ConnectionState.waiting) {
+                  if (healthySnapshot.connectionState ==
+                      ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  if (!healthySnapshot.hasData || !healthySnapshot.data!.exists) {
+                  if (!healthySnapshot.hasData ||
+                      !healthySnapshot.data!.exists) {
                     return const Center(
-                      child: Text('Flight not found', style: TextStyle(color: Colors.white)),
+                      child: Text('Flight not found',
+                          style: TextStyle(color: Colors.white)),
                     );
                   }
 
                   return _buildFlightDetails(
-                    context, 
-                    healthySnapshot.data!, 
-                    flightId,
-                    'Healthy'
-                  );
+                      context, healthySnapshot.data!, flightId, 'Healthy');
                 },
               );
             },
@@ -93,11 +88,10 @@ class FlightDetailsScreen extends StatelessWidget {
       ),
     );
   }
-  
 
   Widget _buildFlightDetails(
-    BuildContext context, 
-    DocumentSnapshot flightDoc, 
+    BuildContext context,
+    DocumentSnapshot flightDoc,
     String flightId,
     String riskCategory,
   ) {
@@ -129,7 +123,8 @@ class FlightDetailsScreen extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: _getStatusColor(flightData['status']),
                           borderRadius: BorderRadius.circular(20),
@@ -205,52 +200,54 @@ class FlightDetailsScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  ...pilots.map((pilot) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2E4B61),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Center(
-                            child: Text(
-                              pilot['name'][0],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
+                  ...pilots
+                      .map((pilot) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF2E4B61),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      pilot['name'][0],
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      pilot['name'],
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      pilot['role'],
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              pilot['name'],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              pilot['role'],
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  )).toList(),
+                          ))
+                      .toList(),
                 ],
               ),
             ),
@@ -270,10 +267,13 @@ class FlightDetailsScreen extends StatelessWidget {
                     icon: Icons.analytics,
                     label: 'Fatigue Details',
                     onPressed: () {
-                      Navigator.pushNamed(
+                      Navigator.push(
                         context,
-                        '/fatigue_details',
-                        arguments: flightData['flightId'],
+                        MaterialPageRoute(
+                          builder: (context) => FatigueDetailsScreen(
+                            flightId: flightId,
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -284,10 +284,14 @@ class FlightDetailsScreen extends StatelessWidget {
                     icon: Icons.settings,
                     label: 'Manage Flight',
                     onPressed: () {
-                      Navigator.pushNamed(
+                      Navigator.push(
                         context,
-                        '/manage_flight',
-                        arguments: flightData['flightId'],
+                        MaterialPageRoute(
+                          builder: (context) => ManageFlightScreen(
+                            flightId: flightId,
+                            flightData: flightData,
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -348,13 +352,8 @@ class FlightDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEnhancedRiskSection(List<Map<String, dynamic>> pilots, String riskCategory) {
-    double averageScore = 0;
-    if (pilots.isNotEmpty) {
-      final scores = pilots.map((p) => p['fatigueScore'] as num).toList();
-      averageScore = scores.reduce((a, b) => a + b) / scores.length;
-    }
-
+  Widget _buildEnhancedRiskSection(
+      List<Map<String, dynamic>> pilots, String riskCategory) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -373,47 +372,103 @@ class FlightDetailsScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: _getRiskColor(riskCategory),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                riskCategory,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: _getRiskColor(riskCategory),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            riskCategory,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2E4B61),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.speed, color: Colors.white70, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'FI: ${averageScore.toStringAsFixed(1)}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
+        const SizedBox(height: 16),
+        ...pilots
+            .map((pilot) => Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2E4B61),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1C2E3D),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Center(
+                              child: Text(
+                                pilot['name'][0],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                pilot['name'],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                pilot['role'],
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1C2E3D),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.speed,
+                                color: Colors.white70, size: 18),
+                            const SizedBox(width: 6),
+                            Text(
+                              'FI: ${pilot['fatigueScore']?.toStringAsFixed(1) ?? 'N/A'}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ))
+            .toList(),
       ],
     );
   }

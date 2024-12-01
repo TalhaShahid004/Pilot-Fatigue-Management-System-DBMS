@@ -1,4 +1,6 @@
 // lib/utils/populate_data.dart
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DataPopulationUtil {
@@ -228,13 +230,117 @@ Future<void> populateFlights() async {
   }
 
   // Populate everything
-  Future<void> populateAll() async {
-    await populateAirports();
-    await populateFlightRoutes();
-    await populateFlights();
-    await populateFlightAssignments();
-    await updateOperationalMetrics();
-  }   
+Future<void> populateAll() async {
+  await populateAirports();
+  await populateFlightRoutes();
+  await populateFlights();
+  await populateFlightAssignments();
+  await populatePilotData();
+  await updateOperationalMetrics();
+}  
+
+  Future<void> populatePilotData() async {
+  final pilots = ['pilot1@gmail.com', 'pilot2@gmail.com', 'pilot3@gmail.com'];
+  final now = DateTime.now();
+
+  // Populate pilot metrics
+  for (var pilotId in pilots) {
+    await _firestore.collection('pilotMetrics').doc(pilotId).set({
+      'totalFlightHoursLast7Days': 20 + (Random().nextDouble() * 10),
+      'totalFlightHoursLast28Days': 80 + (Random().nextDouble() * 20),
+      'timeZonesCrossedLast24Hours': Random().nextInt(3),
+      'lastRestPeriodEnd': now.subtract(Duration(hours: Random().nextInt(12))),
+      'currentDutyPeriodStart': now.subtract(Duration(hours: Random().nextInt(6))),
+    });
+  }
+
+  // Populate duty periods
+  int dutyCounter = 1;
+  for (var pilotId in pilots) {
+    for (int i = 0; i < 5; i++) {
+      final startTime = now.subtract(Duration(days: i, hours: Random().nextInt(12)));
+      final duration = 8 + Random().nextInt(4); // 8-12 hours duty periods
+      
+      await _firestore.collection('dutyPeriods').doc('D$dutyCounter').set({
+        'pilotId': pilotId,
+        'startTime': startTime,
+        'endTime': startTime.add(Duration(hours: duration)),
+        'totalHours': duration,
+        'dutyType': Random().nextBool() ? 'Flight Duty' : 'Ground Duty',
+        'status': 'Completed'
+      });
+      dutyCounter++;
+    }
+  }
+
+  // Populate rest periods
+  int restCounter = 1;
+  for (var pilotId in pilots) {
+    for (int i = 0; i < 5; i++) {
+      final startTime = now.subtract(Duration(days: i + 1));
+      final duration = 10 + Random().nextInt(4); // 10-14 hours rest periods
+      
+      await _firestore.collection('restPeriods').doc('R$restCounter').set({
+        'pilotId': pilotId,
+        'restType': Random().nextBool() ? 'Daily Rest' : 'Extended Rest',
+        'restLocation': Random().nextBool() ? 'Home Base' : 'Outstation',
+        'startTime': startTime,
+        'endTime': startTime.add(Duration(hours: duration)),
+        'totalHours': duration,
+        'minimumHours': 10,
+        'status': 'Completed'
+      });
+      restCounter++;
+    }
+  }
+
+  // Populate fatigue scores for past flights
+  final flightDocs = await _firestore.collection('flights').get();
+  int scoreCounter = 1;
+  
+  for (var flightDoc in flightDocs.docs) {
+    final flightId = flightDoc.id;
+    final assessments = await _firestore.collection('fatigueAssessments')
+        .where('flightId', isEqualTo: flightId)
+        .get();
+
+    for (var assessment in assessments.docs) {
+      final pilotId = assessment.data()['pilotId'];
+      final dutyHourScore = 70 + Random().nextInt(20);
+      final timezoneScore = 75 + Random().nextInt(15);
+      final restPeriodScore = 80 + Random().nextInt(15);
+      final flightDurationScore = 75 + Random().nextInt(15);
+      final selfAssessmentScore = 70 + Random().nextInt(20);
+      
+      final finalScore = (dutyHourScore * 0.2 +
+          timezoneScore * 0.2 +
+          restPeriodScore * 0.2 +
+          flightDurationScore * 0.2 +
+          selfAssessmentScore * 0.2);
+
+      String riskCategory;
+      if (finalScore >= 85) riskCategory = 'Low';
+      else if (finalScore >= 70) riskCategory = 'Moderate';
+      else riskCategory = 'High';
+
+      await _firestore.collection('fatigueScores').doc('S$scoreCounter').set({
+        'pilotId': pilotId,
+        'flightId': flightId,
+        'assessmentId': assessment.id,
+        'dutyHourScore': dutyHourScore,
+        'timezoneScore': timezoneScore,
+        'restPeriodScore': restPeriodScore,
+        'flightDurationScore': flightDurationScore,
+        'selfAssessmentScore': selfAssessmentScore,
+        'finalScore': finalScore,
+        'riskCategory': riskCategory,
+        'timestamp': assessment.data()['timestamp'],
+      });
+      
+      scoreCounter++;
+    }
+  }
+}
 
 Future<void> updateOperationalMetrics() async {
     final firestore = FirebaseFirestore.instance;

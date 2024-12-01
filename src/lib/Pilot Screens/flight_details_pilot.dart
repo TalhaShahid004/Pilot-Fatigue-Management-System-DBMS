@@ -119,8 +119,8 @@ class PilotFlightDetailsScreen extends StatelessWidget {
                     return Column(
                       children: [
                         ElevatedButton(
-                          onPressed: isWithin4Hours ? 
-                            () => Navigator.pushNamed(context, '/flight_assessment') : null,
+           onPressed: isWithin4Hours ? 
+  () => Navigator.pushNamed(context, '/flight_assessment', arguments: flightId) : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1C810F),
                             minimumSize: const Size(double.infinity, 45),
