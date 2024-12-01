@@ -131,20 +131,6 @@ class PilotFlightDetailsScreen extends StatelessWidget {
                             style: const TextStyle(color: Colors.white),
                           ),
                         ),
-                        if (hasAssessment) ...[
-                          const SizedBox(height: 12),
-                          ElevatedButton(
-                            onPressed: () => Navigator.pushNamed(
-                              context, '/fatigue_mitigation'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromARGB(255, 10, 230, 241),
-                              minimumSize: const Size(double.infinity, 45),
-                            ),
-                            child: const Text('View Fatigue Mitigation Advice',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ],
                       ],
                     );
                   },

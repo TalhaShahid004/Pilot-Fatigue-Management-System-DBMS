@@ -329,13 +329,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                         Text(
-                          '${DateFormat('HH:mm').format(startTime)} - ${DateFormat('HH:mm').format(endTime)}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w200,
-                            color: Colors.white.withOpacity(0.8),
-                          ),
-                        ),
+  '${DateFormat('HH:mm').format(endTime)} - ${DateFormat('HH:mm').format(startTime)}',
+  style: TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w200,
+    color: Colors.white.withOpacity(0.8),
+  ),
+),
                       ],
                     ),
                     Text(
@@ -371,7 +371,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           child: Center(
                             child: ElevatedButton(
                               onPressed: () => Navigator.pushNamed(
-                                  context, '/flight_assessment'),
+                                context,
+                                '/flight_assessment',
+                                arguments: nextFlight!['id'],
+                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF1C810F),
                                 minimumSize: const Size(196, 38),
@@ -381,32 +384,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               child: const Text(
                                 'Fatigue Assessment',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      if (hasAssessment)
-                        Padding(
-                          padding: const EdgeInsets.all(5.0),
-                          child: Center(
-                            child: ElevatedButton(
-                              onPressed: () => Navigator.pushNamed(
-                                  context, '/fatigue_mitigation'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    const Color.fromARGB(255, 10, 230, 241),
-                                minimumSize: const Size(196, 38),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: const Text(
-                                'Fatigue Mitigation Advice',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,

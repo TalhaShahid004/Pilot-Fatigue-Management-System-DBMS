@@ -7,7 +7,6 @@ import 'Authentication Screens/login.dart';
 import 'Authentication Screens/signup.dart';
 import 'Pilot Screens/dashboard.dart';
 import 'Pilot Screens/fatigue_assessment.dart';
-import 'Pilot Screens/fatigue_mitigation.dart';
 import 'Pilot Screens/flight_details_pilot.dart';
 
 import 'Operations Screens/operationDashboard.dart';
