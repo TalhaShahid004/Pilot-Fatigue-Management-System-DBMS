@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_1/utils/fatigue_calculator.dart';
 import 'package:intl/intl.dart';
 
 class ModerateRiskFlightsScreen extends StatelessWidget {
@@ -75,12 +76,20 @@ class ModerateRiskFlightsScreen extends StatelessWidget {
                         final startTime = (flightData['startTime'] as Timestamp).toDate();
                         final pilots = List<Map<String, dynamic>>.from(flightData['pilots'] ?? []);
                         
-                        double avgFatigueScore = 0;
-                        if (pilots.isNotEmpty) {
-                          final totalFatigue = pilots.fold(0.0, 
-                            (sum, pilot) => sum + (pilot['fatigueScore'] ?? 0));
-                          avgFatigueScore = totalFatigue / pilots.length;
-                        }
+                     return FutureBuilder<List<double>>(
+                          future: Future.wait(pilots.map((pilot) =>
+                              _getPilotFatigueScore(
+                                  pilot['pilotId'], flights[index].id))),
+                          builder: (context, scoreSnapshot) {
+                            double avgFatigueScore = 0;
+                            if (scoreSnapshot.hasData) {
+                              final scores = scoreSnapshot.data!;
+                              if (scores.isNotEmpty) {
+                                avgFatigueScore =
+                                    scores.reduce((a, b) => a + b) /
+                                        scores.length;
+                              }
+                            }
 
                         return Column(
                           children: [
@@ -104,7 +113,9 @@ class ModerateRiskFlightsScreen extends StatelessWidget {
                       },
                     );
                   },
-                ),
+                );
+              },
+            ),
               ),
             ],
           ),
@@ -112,7 +123,73 @@ class ModerateRiskFlightsScreen extends StatelessWidget {
       ),
     );
   }
+      
+Future<double> _getPilotFatigueScore(String pilotId, String flightId) async {
+  final firestore = FirebaseFirestore.instance;
+  
+  try {
+    print('Calculating fatigue score for pilot: $pilotId, flight: $flightId');
+    
+    // Get pilot metrics
+    final metricsDoc = await firestore
+        .collection('pilotMetrics')
+        .doc(pilotId)
+        .get();
+    
+    if (!metricsDoc.exists) {
+      print('No metrics found for pilot: $pilotId');
+      return 0.0;
+    }
+    
+    final metrics = metricsDoc.data();
+    print('Retrieved metrics: $metrics');
+    
+    // Get fatigue assessment
+    final assessmentQuery = await firestore
+        .collection('fatigueAssessments')
+        .where('pilotId', isEqualTo: pilotId)
+        .where('flightId', isEqualTo: flightId)
+        .limit(1)
+        .get();
+        
+    final assessment = assessmentQuery.docs.isNotEmpty ? 
+        assessmentQuery.docs.first.data() : null;
 
+    if (metrics != null) {
+      final flightHoursRaw = FatigueCalculator.normalizeFlightHoursWeek(
+        metrics['totalFlightHoursLast7Days'] ?? 0);
+      final flightHoursWeighted = flightHoursRaw * 0.30;
+
+      final timeZoneRaw = FatigueCalculator.normalizeTimeZones(
+        metrics['timeZonesCrossedLast24Hours'] ?? 0);
+      final timeZoneWeighted = timeZoneRaw * 0.25;
+
+      final restPeriodRaw = FatigueCalculator.calculateRestPeriodScore(
+        metrics['lastRestPeriodEnd'],
+        assessment?['questions']?['hoursSleptLast24'] ?? 8);
+      final restPeriodWeighted = restPeriodRaw * 0.20;
+
+      final flightDurationRaw = FatigueCalculator.normalizeFlightDuration(
+        metrics['currentDutyPeriodDuration'] ?? 0);
+      final flightDurationWeighted = flightDurationRaw * 0.15;
+
+      final selfAssessmentRaw = assessment != null ? 
+        FatigueCalculator.normalizeSelfAssessment(assessment['questions']) : 0.5;
+      final selfAssessmentWeighted = selfAssessmentRaw * 0.10;
+
+      return flightHoursWeighted +
+          timeZoneWeighted +
+          restPeriodWeighted +
+          flightDurationWeighted +
+          selfAssessmentWeighted;
+    }
+    
+    return 0.0;
+  } catch (e) {
+    print('Error calculating pilot fatigue score: $e');
+    return 0.0;
+  }
+}
   Widget _buildFlightCard({
     required String flightNumber,
     required String route,

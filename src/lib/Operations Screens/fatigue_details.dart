@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_1/utils/fatigue_calculator.dart';
 import 'package:intl/intl.dart';
 
 class FatigueDetailsScreen extends StatelessWidget {
@@ -197,46 +198,6 @@ return FutureBuilder<QuerySnapshot>(
     );
   }
 
-  Widget _buildFatigueScore(
-    Map<String, dynamic>? metrics,
-    Map<String, dynamic>? assessment,
-  ) {
-    final double fatigueIndex = _calculateFatigueIndex(metrics, assessment);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Column(
-          children: [
-            const Text(
-              'Fatigue Index',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                color: _getFatigueColor(fatigueIndex),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                fatigueIndex.toStringAsFixed(1),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
 // Replace all existing weight calculation methods with:
   double _normalizeFlightHoursWeek(num hours) {
     // Normalize 0-100 hours to 0-1
@@ -291,35 +252,206 @@ double _normalizeSelfAssessment(Map<String, dynamic> assessment) {
           .clamp(0.0, 1.0));
 }
 
-  double _calculateFatigueIndex(
-    Map<String, dynamic>? metrics,
-    Map<String, dynamic>? assessment,
-  ) {
-    if (metrics == null) return 0;
+Widget _buildFatigueScore(
+  Map<String, dynamic>? metrics,
+  Map<String, dynamic>? assessment,
+) {
+  return FutureBuilder<Map<String, double>>(
+    future: _calculateFatigueBreakdown(metrics, assessment),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
 
-    final flightHoursWeight =
-        _normalizeFlightHoursWeek(metrics['totalFlightHoursLast7Days'] ?? 0);
+      final breakdown = snapshot.data ?? {};
+      final double fatigueIndex = breakdown['finalScore'] ?? 0.0;
 
-    final timeZoneWeight =
-        _normalizeTimeZones(metrics['timeZonesCrossedLast24Hours'] ?? 0);
+      return Column(
+        children: [
+          // Score Breakdown Section
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2E4B61),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Score Breakdown',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildScoreRow('Flight Hours (30%)', 
+                  breakdown['flightHoursRaw'] ?? 0, 
+                  breakdown['flightHoursWeighted'] ?? 0),
+                _buildScoreRow('Time Zones (25%)', 
+                  breakdown['timeZoneRaw'] ?? 0, 
+                  breakdown['timeZoneWeighted'] ?? 0),
+                _buildScoreRow('Rest Period (20%)', 
+                  breakdown['restPeriodRaw'] ?? 0, 
+                  breakdown['restPeriodWeighted'] ?? 0),
+                _buildScoreRow('Flight Duration (15%)', 
+                  breakdown['flightDurationRaw'] ?? 0, 
+                  breakdown['flightDurationWeighted'] ?? 0),
+                _buildScoreRow('Self Assessment (10%)', 
+                  breakdown['selfAssessmentRaw'] ?? 0, 
+                  breakdown['selfAssessmentWeighted'] ?? 0),
+                const Divider(color: Colors.white24, height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Final Score',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      fatigueIndex.toStringAsFixed(2),
+                      style: TextStyle(
+                        color: _getFatigueColor(fatigueIndex),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Final Score Display
+          const Text(
+            'Fatigue Index',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            decoration: BoxDecoration(
+              color: _getFatigueColor(fatigueIndex),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              fatigueIndex.toStringAsFixed(2),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
 
-    final restPeriodWeight = _calculateRestPeriodScore(
-        metrics['lastRestPeriodEnd'],
-        assessment?['questions']?['hoursSleptLast24'] ?? 8);
+Widget _buildScoreRow(String label, double rawScore, double weightedScore) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70),
+        ),
+        Text(
+          '${rawScore.toStringAsFixed(2)} → ${weightedScore.toStringAsFixed(2)}',
+          style: const TextStyle(color: Colors.white),
+        ),
+      ],
+    ),
+  );
+}
 
-    final flightDurationWeight =
-        _normalizeFlightDuration(metrics['currentDutyPeriodDuration'] ?? 0);
+Future<Map<String, double>> _calculateFatigueBreakdown(
+  Map<String, dynamic>? metrics,
+  Map<String, dynamic>? assessment,
+) async {
+  if (metrics == null) return {};
 
-    final selfAssessmentWeight =
-        assessment != null ? _normalizeSelfAssessment(assessment) : 0.5;
+  final flightHoursRaw = FatigueCalculator.normalizeFlightHoursWeek(
+    metrics['totalFlightHoursLast7Days'] ?? 0);
+  final flightHoursWeighted = flightHoursRaw * 0.30;
 
-    return (0.30 * flightHoursWeight) +
-        (0.25 * timeZoneWeight) +
-        (0.20 * restPeriodWeight) +
-        (0.15 * flightDurationWeight) +
-        (0.10 * selfAssessmentWeight);
+  final timeZoneRaw = FatigueCalculator.normalizeTimeZones(
+    metrics['timeZonesCrossedLast24Hours'] ?? 0);
+  final timeZoneWeighted = timeZoneRaw * 0.25;
+
+  final restPeriodRaw = FatigueCalculator.calculateRestPeriodScore(
+    metrics['lastRestPeriodEnd'],
+    assessment?['questions']?['hoursSleptLast24'] ?? 8);
+  final restPeriodWeighted = restPeriodRaw * 0.20;
+
+  final flightDurationRaw = FatigueCalculator.normalizeFlightDuration(
+    metrics['currentDutyPeriodDuration'] ?? 0);
+  final flightDurationWeighted = flightDurationRaw * 0.15;
+
+  final selfAssessmentRaw = assessment != null ? 
+    FatigueCalculator.normalizeSelfAssessment(assessment['questions']) : 0.5;
+  final selfAssessmentWeighted = selfAssessmentRaw * 0.10;
+
+  final finalScore = flightHoursWeighted +
+      timeZoneWeighted +
+      restPeriodWeighted +
+      flightDurationWeighted +
+      selfAssessmentWeighted;
+
+  return {
+    'flightHoursRaw': flightHoursRaw,
+    'flightHoursWeighted': flightHoursWeighted,
+    'timeZoneRaw': timeZoneRaw,
+    'timeZoneWeighted': timeZoneWeighted,
+    'restPeriodRaw': restPeriodRaw,
+    'restPeriodWeighted': restPeriodWeighted,
+    'flightDurationRaw': flightDurationRaw,
+    'flightDurationWeighted': flightDurationWeighted,
+    'selfAssessmentRaw': selfAssessmentRaw,
+    'selfAssessmentWeighted': selfAssessmentWeighted,
+    'finalScore': finalScore,
+  };
+}
+
+Future<void> _updateFlightRiskCategory(
+  String flightId, 
+  String newCategory, 
+  Map<String, dynamic> flightData
+) async {
+  final firestore = FirebaseFirestore.instance;
+  final batch = firestore.batch();
+
+  // Remove from old collection
+  if (flightData['riskCategory'] != null) {
+    final oldCollectionRef = firestore.collection('${flightData['riskCategory'].toLowerCase()}Flights');
+    batch.delete(oldCollectionRef.doc(flightId));
   }
 
+  // Add to new collection
+  final newCollectionRef = firestore.collection('${newCategory.toLowerCase()}Flights');
+  batch.set(newCollectionRef.doc(flightId), {
+    ...flightData,
+    'riskCategory': newCategory,
+  });
+
+  // Update main flight document
+  final flightRef = firestore.collection('flights').doc(flightId);
+  batch.update(flightRef, {'riskCategory': newCategory});
+
+  await batch.commit();
+}
   // Helper methods
   String _formatRestPeriod(Timestamp? timestamp) {
     if (timestamp == null) return 'N/A';
