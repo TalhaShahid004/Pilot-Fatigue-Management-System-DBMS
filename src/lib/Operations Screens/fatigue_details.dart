@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 
 class FatigueDetailsScreen extends StatelessWidget {
   final String flightId;
-  
+
   const FatigueDetailsScreen({
     super.key,
     required this.flightId,
@@ -32,7 +32,8 @@ class FatigueDetailsScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final flightData = flightSnapshot.data!.data() as Map<String, dynamic>;
+          final flightData =
+              flightSnapshot.data!.data() as Map<String, dynamic>;
           final pilots = List<Map<String, dynamic>>.from(flightData['pilots']);
 
           return ListView.builder(
@@ -55,17 +56,20 @@ class FatigueDetailsScreen extends StatelessWidget {
           .doc(pilot['pilotId'])
           .snapshots(),
       builder: (context, metricsSnapshot) {
-        return FutureBuilder<DocumentSnapshot>(
-          future: FirebaseFirestore.instance
-              .collection('fatigueAssessments')
-              .doc('${pilot['pilotId']}_$flightId')
-              .get(),
-          builder: (context, assessmentSnapshot) {
-            final metrics = metricsSnapshot.hasData ? 
-                metricsSnapshot.data!.data() as Map<String, dynamic>? : null;
-            final assessment = assessmentSnapshot.hasData ? 
-                assessmentSnapshot.data!.data() as Map<String, dynamic>? : null;
-
+return FutureBuilder<QuerySnapshot>(
+  future: FirebaseFirestore.instance
+      .collection('fatigueAssessments')
+      .where('pilotId', isEqualTo: pilot['pilotId'])
+      .where('flightId', isEqualTo: flightId)
+      .limit(1)
+      .get(),
+  builder: (context, assessmentSnapshot) {
+    final metrics = metricsSnapshot.hasData
+        ? metricsSnapshot.data!.data() as Map<String, dynamic>?
+        : null;
+    final assessment = assessmentSnapshot.hasData && assessmentSnapshot.data!.docs.isNotEmpty
+        ? assessmentSnapshot.data!.docs.first.data() as Map<String, dynamic>?
+        : null;
             return Card(
               color: const Color(0xFF21384A),
               margin: const EdgeInsets.only(bottom: 16),
@@ -76,50 +80,37 @@ class FatigueDetailsScreen extends StatelessWidget {
                   children: [
                     _buildPilotHeader(pilot),
                     const Divider(color: Colors.white24, height: 32),
-          
-
                     if (metrics != null) ...[
-  _buildMetricSection(
-    'Flight Hours (7 Days)', 
-    '${metrics['totalFlightHoursLast7Days']?.toString() ?? 'N/A'} hrs'
-  ),
-  _buildMetricSection(
-    'Time Zones Crossed', 
-    metrics['timeZonesCrossedLast24Hours']?.toString() ?? 'N/A'
-  ),
-  _buildMetricSection(
-    'Hours Since Last Rest', 
-    _formatRestPeriod(metrics['lastRestPeriodEnd'])
-  ),
-],
-if (assessment != null && assessment['questions'] != null) ...[
-  const Divider(color: Colors.white24, height: 32),
-  const Text(
-    'Self Assessment',
-    style: TextStyle(
-      color: Colors.white,
-      fontSize: 16,
-      fontWeight: FontWeight.bold,
-    ),
-  ),
-  const SizedBox(height: 16),
-  _buildMetricSection(
-    'Sleep Quality', 
-    '${assessment['questions']['sleepQuality']}/10'
-  ),
-  _buildMetricSection(
-    'Alertness Level', 
-    '${assessment['questions']['alertnessLevel']}/7'
-  ),
-  _buildMetricSection(
-    'Stress Level', 
-    '${assessment['questions']['stressLevel']}/10'
-  ),
-  _buildMetricSection(
-    'Hours Slept (24h)', 
-    '${assessment['questions']['hoursSleptLast24']} hrs'
-  ),
-],
+                      _buildMetricSection('Flight Hours (7 Days)',
+                          '${metrics['totalFlightHoursLast7Days']?.toString() ?? 'N/A'} hrs'),
+                      _buildMetricSection(
+                          'Time Zones Crossed',
+                          metrics['timeZonesCrossedLast24Hours']?.toString() ??
+                              'N/A'),
+                      _buildMetricSection('Hours Since Last Rest',
+                          _formatRestPeriod(metrics['lastRestPeriodEnd'])),
+                    ],
+                    if (assessment != null &&
+                        assessment['questions'] != null) ...[
+                      const Divider(color: Colors.white24, height: 32),
+                      const Text(
+                        'Self Assessment',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildMetricSection('Sleep Quality',
+                          '${assessment['questions']['sleepQuality']}/10'),
+                      _buildMetricSection('Alertness Level',
+                          '${assessment['questions']['alertnessLevel']}/7'),
+                      _buildMetricSection('Stress Level',
+                          '${assessment['questions']['stressLevel']}/10'),
+                      _buildMetricSection('Hours Slept (24h)',
+                          '${assessment['questions']['hoursSleptLast24']} hrs'),
+                    ],
                     const Divider(color: Colors.white24, height: 32),
                     _buildFatigueScore(metrics, assessment),
                   ],
@@ -180,38 +171,38 @@ if (assessment != null && assessment['questions'] != null) ...[
     );
   }
 
- Widget _buildMetricSection(String title, String value) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 16),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 14,
+  Widget _buildMetricSection(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+            ),
           ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _buildFatigueScore(
-    Map<String, dynamic>? metrics, 
+    Map<String, dynamic>? metrics,
     Map<String, dynamic>? assessment,
   ) {
     final double fatigueIndex = _calculateFatigueIndex(metrics, assessment);
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -247,78 +238,87 @@ if (assessment != null && assessment['questions'] != null) ...[
   }
 
 // Replace all existing weight calculation methods with:
-double _normalizeFlightHoursWeek(num hours) {
-  // Normalize 0-100 hours to 0-1
-  final normalized = hours / 100;
-  return normalized.clamp(0.0, 1.0);
-}
+  double _normalizeFlightHoursWeek(num hours) {
+    // Normalize 0-100 hours to 0-1
+    final normalized = hours / 100;
+    return normalized.clamp(0.0, 1.0);
+  }
 
-double _normalizeTimeZones(num zones) {
-  // Normalize 0-8 timezone crosses to 0-1
-  final normalized = zones / 8;
-  return normalized.clamp(0.0, 1.0);
-}
+  double _normalizeTimeZones(num zones) {
+    // Normalize 0-8 timezone crosses to 0-1
+    final normalized = zones / 8;
+    return normalized.clamp(0.0, 1.0);
+  }
 
-double _calculateRestPeriodScore(Timestamp? lastRest, double hoursSlept) {
-  if (lastRest == null) return 1.0; // Worst case
-  
-  final hoursSinceRest = DateTime.now().difference(lastRest.toDate()).inHours;
-  
-  // Normalize components
-  final restTimingScore = (24 - hoursSinceRest.clamp(0, 24)) / 24; // Higher is better
-  final sleepScore = hoursSlept / 12; // Normalize against ideal 12 hours
-  
-  // Combined rest period score (0-1, where 1 is most fatigued)
-  return 1 - ((restTimingScore * 0.6 + sleepScore * 0.4).clamp(0.0, 1.0));
-}
+  double _calculateRestPeriodScore(Timestamp? lastRest, double hoursSlept) {
+    if (lastRest == null) return 1.0; // Worst case
 
-double _normalizeFlightDuration(num duration) {
-  // Normalize 0-16 hours to 0-1
-  final normalized = duration / 16;
-  return normalized.clamp(0.0, 1.0);
-}
+    final hoursSinceRest = DateTime.now().difference(lastRest.toDate()).inHours;
+
+    // Normalize components
+    final restTimingScore =
+        (24 - hoursSinceRest.clamp(0, 24)) / 24; // Higher is better
+    final sleepScore = hoursSlept / 12; // Normalize against ideal 12 hours
+
+    // Combined rest period score (0-1, where 1 is most fatigued)
+    return 1 - ((restTimingScore * 0.6 + sleepScore * 0.4).clamp(0.0, 1.0));
+  }
+
+  double _normalizeFlightDuration(num duration) {
+    // Normalize 0-16 hours to 0-1
+    final normalized = duration / 16;
+    return normalized.clamp(0.0, 1.0);
+  }
 
 double _normalizeSelfAssessment(Map<String, dynamic> assessment) {
+  // Convert sleep quality string back to number
+  final sleepQualityMap = {
+    'Excellent': 9.0,
+    'Good': 7.0,
+    'Fair': 5.0,
+    'Poor': 3.0,
+    'Very Poor': 1.0
+  };
+  
   final alertness = (assessment['questions']['alertnessLevel'] as num) / 7;
   final stress = (assessment['questions']['stressLevel'] as num) / 10;
-  final sleepQuality = (assessment['questions']['sleepQuality'] as num) / 10;
-  
+  final sleepQuality = sleepQualityMap[assessment['questions']['sleepQuality']] ?? 5.0;
+  final normalizedSleepQuality = sleepQuality / 10;
+
   // Combine factors (1 is most fatigued)
-  return 1 - ((alertness * 0.4 + (1 - stress) * 0.3 + sleepQuality * 0.3).clamp(0.0, 1.0));
+  return 1 -
+      ((alertness * 0.4 + (1 - stress) * 0.3 + normalizedSleepQuality * 0.3)
+          .clamp(0.0, 1.0));
 }
 
-double _calculateFatigueIndex(
-  Map<String, dynamic>? metrics, 
-  Map<String, dynamic>? assessment,
-) {
-  if (metrics == null) return 0;
+  double _calculateFatigueIndex(
+    Map<String, dynamic>? metrics,
+    Map<String, dynamic>? assessment,
+  ) {
+    if (metrics == null) return 0;
 
-  final flightHoursWeight = _normalizeFlightHoursWeek(
-    metrics['totalFlightHoursLast7Days'] ?? 0
-  );
-  
-  final timeZoneWeight = _normalizeTimeZones(
-    metrics['timeZonesCrossedLast24Hours'] ?? 0
-  );
-  
-  final restPeriodWeight = _calculateRestPeriodScore(
-    metrics['lastRestPeriodEnd'],
-    assessment?['questions']?['hoursSleptLast24'] ?? 8
-  );
-  
-  final flightDurationWeight = _normalizeFlightDuration(
-    metrics['currentDutyPeriodDuration'] ?? 0
-  );
-  
-  final selfAssessmentWeight = assessment != null ? 
-    _normalizeSelfAssessment(assessment) : 0.5;
+    final flightHoursWeight =
+        _normalizeFlightHoursWeek(metrics['totalFlightHoursLast7Days'] ?? 0);
 
-  return (0.30 * flightHoursWeight) +
-         (0.25 * timeZoneWeight) +
-         (0.20 * restPeriodWeight) +
-         (0.15 * flightDurationWeight) +
-         (0.10 * selfAssessmentWeight);
-}
+    final timeZoneWeight =
+        _normalizeTimeZones(metrics['timeZonesCrossedLast24Hours'] ?? 0);
+
+    final restPeriodWeight = _calculateRestPeriodScore(
+        metrics['lastRestPeriodEnd'],
+        assessment?['questions']?['hoursSleptLast24'] ?? 8);
+
+    final flightDurationWeight =
+        _normalizeFlightDuration(metrics['currentDutyPeriodDuration'] ?? 0);
+
+    final selfAssessmentWeight =
+        assessment != null ? _normalizeSelfAssessment(assessment) : 0.5;
+
+    return (0.30 * flightHoursWeight) +
+        (0.25 * timeZoneWeight) +
+        (0.20 * restPeriodWeight) +
+        (0.15 * flightDurationWeight) +
+        (0.10 * selfAssessmentWeight);
+  }
 
   // Helper methods
   String _formatRestPeriod(Timestamp? timestamp) {

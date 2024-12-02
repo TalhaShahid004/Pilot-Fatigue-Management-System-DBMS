@@ -255,7 +255,7 @@ class FlightDetailsScreen extends StatelessWidget {
 
             // Risk Assessment Card
             _buildCard(
-              child: _buildEnhancedRiskSection(pilots, riskCategory),
+              child: _buildEnhancedRiskSection(pilots, riskCategory, flightId),
             ),
             const SizedBox(height: 24),
 
@@ -353,7 +353,7 @@ class FlightDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildEnhancedRiskSection(
-      List<Map<String, dynamic>> pilots, String riskCategory) {
+      List<Map<String, dynamic>> pilots, String riskCategory, String flightId) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -454,13 +454,36 @@ class FlightDetailsScreen extends StatelessWidget {
                             const Icon(Icons.speed,
                                 color: Colors.white70, size: 18),
                             const SizedBox(width: 6),
-                            Text(
-                              'FI: ${pilot['fatigueScore']?.toStringAsFixed(1) ?? 'N/A'}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            StreamBuilder<QuerySnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('fatigueScores')
+                                  .where('pilotId', isEqualTo: pilot['pilotId'])
+                                  .where('flightId', isEqualTo: flightId)
+                                  .limit(1)
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                if (!snapshot.hasData ||
+                                    snapshot.data!.docs.isEmpty) {
+                                  return const Text(
+                                    'FI: N/A',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  );
+                                }
+                                final score = snapshot.data!.docs.first.data()
+                                    as Map<String, dynamic>;
+                                return Text(
+                                  'FI: ${score['selfAssessmentScore']?.toStringAsFixed(1) ?? 'N/A'}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),

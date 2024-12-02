@@ -98,15 +98,16 @@ if (assignmentId == null) {
 await _firestore.collection('fatigueAssessments').doc(assignmentId).set({
   'pilotId': userEmail,
   'flightId': flightId,
-        'score': _calculateFinalScore(),
-        'timestamp': FieldValue.serverTimestamp(),
-        'questions': {
-          'sleepQuality': sleepQualityCategory,
-          'alertnessLevel': alertnessLevel,
-          'stressLevel': stressLevel,
-          'hoursSleptLast24': hoursSleptLast24,
-        }
-      });
+  'score': _calculateFinalScore(),
+  'timestamp': FieldValue.serverTimestamp(),
+  'questions': {
+    'sleepQuality': sleepQualityCategory,
+    'sleepQualityValue': sleepQualityValue,  // Store numeric value as well
+    'alertnessLevel': alertnessLevel,
+    'stressLevel': stressLevel,
+    'hoursSleptLast24': hoursSleptLast24,
+  }
+});
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
