@@ -89,16 +89,22 @@ class FlightDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFlightDetails(
-    BuildContext context,
-    DocumentSnapshot flightDoc,
-    String flightId,
-    String riskCategory,
-  ) {
-    final flightData = flightDoc.data() as Map<String, dynamic>;
-    final startTime = flightData['startTime'] as Timestamp;
-    final endTime = flightData['endTime'] as Timestamp;
-    final pilots = List<Map<String, dynamic>>.from(flightData['pilots'] ?? []);
+Widget _buildFlightDetails(
+  BuildContext context,
+  DocumentSnapshot flightDoc,
+  String flightId,
+  String riskCategory,
+) {
+  final flightData = flightDoc.data() as Map<String, dynamic>;
+  final startTime = flightData['startTime'] as Timestamp;
+  final endTime = flightData['endTime'] as Timestamp;
+  final pilots = List<Map<String, dynamic>>.from(flightData['pilots'] ?? []).map((pilot) => {
+    ...pilot,
+    'name': pilot['name'] ?? 'Unknown',
+    'role': pilot['role'] ?? 'Unknown',
+    'pilotId': pilot['pilotId'] ?? '',
+    'fatigueScore': pilot['fatigueScore'] ?? 0.0,
+  }).toList();
 
     return SingleChildScrollView(
       child: Padding(
@@ -352,150 +358,133 @@ class FlightDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEnhancedRiskSection(
-      List<Map<String, dynamic>> pilots, String riskCategory, String flightId) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          children: [
-            Icon(Icons.warning, color: Colors.white70, size: 24),
-            SizedBox(width: 8),
-            Text(
-              'Risk Assessment',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: _getRiskColor(riskCategory),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            riskCategory,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
+Widget _buildEnhancedRiskSection(
+    List<Map<String, dynamic>> pilots, String riskCategory, String flightId) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Row(
+        children: [
+          Icon(Icons.warning, color: Colors.white70, size: 24),
+          SizedBox(width: 8),
+          Text(
+            'Risk Assessment',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
+        ],
+      ),
+      const SizedBox(height: 16),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: _getRiskColor(riskCategory),
+          borderRadius: BorderRadius.circular(20),
         ),
-        const SizedBox(height: 16),
-        ...pilots
-            .map((pilot) => Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(12),
+        child: Text(
+          riskCategory,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      const SizedBox(height: 16),
+      ...pilots.map((pilot) => FutureBuilder<Map<String, dynamic>>(
+        future: _getPilotFatigueDetails(pilot['pilotId'], flightId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final fatigueDetails = snapshot.data ?? {};
+          
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2E4B61),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1C2E3D),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Center(
+                        child: Text(
+                          pilot['name'][0],
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          pilot['name'],
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          pilot['role'],
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2E4B61),
-                    borderRadius: BorderRadius.circular(12),
+                    color: const Color(0xFF1C2E3D),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1C2E3D),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Center(
-                              child: Text(
-                                pilot['name'][0],
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                pilot['name'],
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                pilot['role'],
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1C2E3D),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.speed,
-                                color: Colors.white70, size: 18),
-                            const SizedBox(width: 6),
-                            StreamBuilder<QuerySnapshot>(
-                              stream: FirebaseFirestore.instance
-                                  .collection('fatigueScores')
-                                  .where('pilotId', isEqualTo: pilot['pilotId'])
-                                  .where('flightId', isEqualTo: flightId)
-                                  .limit(1)
-                                  .snapshots(),
-                              builder: (context, snapshot) {
-                                if (!snapshot.hasData ||
-                                    snapshot.data!.docs.isEmpty) {
-                                  return const Text(
-                                    'FI: N/A',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  );
-                                }
-                                final score = snapshot.data!.docs.first.data()
-                                    as Map<String, dynamic>;
-                                return Text(
-                                  'FI: ${score['selfAssessmentScore']?.toStringAsFixed(1) ?? 'N/A'}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
+                      const Icon(Icons.speed, color: Colors.white70, size: 18),
+                      const SizedBox(width: 6),
+                      Text(
+                        'FI: ${fatigueDetails['finalScore']?.toStringAsFixed(1) ?? 'N/A'}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
-                ))
-            .toList(),
-      ],
-    );
-  }
-
+                ),
+              ],
+            ),
+          );
+        },
+      )).toList(),
+    ],
+  );
+}
   Widget _buildActionButton({
     required IconData icon,
     required String label,
@@ -563,4 +552,37 @@ class FlightDetailsScreen extends StatelessWidget {
         return Colors.grey;
     }
   }
+  
+Future<Map<String, dynamic>> _getPilotFatigueDetails(String pilotId, String flightId) async {
+  final firestore = FirebaseFirestore.instance;
+  
+  try {
+    final fatigueScoreDoc = await firestore
+        .collection('fatigueScores')
+        .doc('${pilotId}_$flightId')
+        .get();
+        
+    if (fatigueScoreDoc.exists) {
+      return fatigueScoreDoc.data() ?? {};
+    }
+    
+    // If no fatigue score found, check assessments
+    final assessmentDoc = await firestore
+        .collection('fatigueAssessments')
+        .doc('${pilotId}_$flightId')
+        .get();
+        
+    if (assessmentDoc.exists) {
+      return {
+        'finalScore': assessmentDoc.data()?['score'] ?? 0.0,
+        'selfAssessmentScore': assessmentDoc.data()?['score'] ?? 0.0,
+      };
+    }
+    
+    return {};
+  } catch (e) {
+    print('Error fetching pilot fatigue details: $e');
+    return {};
+  }
+}
 }

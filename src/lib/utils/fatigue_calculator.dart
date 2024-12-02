@@ -31,13 +31,27 @@ class FatigueCalculator {
     return normalized.clamp(0.0, 1.0);
   }
 
-  static double normalizeSelfAssessment(Map<String, dynamic> assessment) {
-    final alertness = (assessment['alertnessLevel'] as num) / 7;
-    final stress = (assessment['stressLevel'] as num) / 10;
-    final sleepQuality = (assessment['sleepQuality'] as num) / 10;
+ static double normalizeSelfAssessment(Map<String, dynamic> assessment) {
+    final alertness = (assessment['alertnessLevel'] as num);
+    final stress = (assessment['stressLevel'] as num);
+    final hoursSlept = (assessment['hoursSleptLast24'] as num);
+    final sleepQuality = (assessment['sleepQuality'] as num);
     
-    return 1 - ((alertness * 0.4 + (1 - stress) * 0.3 + sleepQuality * 0.3).clamp(0.0, 1.0));
-  }
+    // Critical conditions that should immediately raise red flags
+    if (alertness <= 2 || // Very low alertness
+        stress >= 8 || // High stress
+        hoursSlept <= 4 || // Insufficient sleep
+        sleepQuality <= 3) { // Poor sleep quality
+        return 1.0; // Maximum risk score
+    }
+    
+    // Normal calculation for non-critical cases
+    final alertnessScore = (7 - alertness) / 7; // Inverse because lower alertness = higher risk
+    final stressScore = stress / 10;
+    final sleepScore = (10 - sleepQuality) / 10;
+    
+    return (alertnessScore * 0.4 + stressScore * 0.3 + sleepScore * 0.3).clamp(0.0, 1.0);
+}
 
   static double calculateFinalScore({
     required double flightHoursWeight,
