@@ -20,6 +20,8 @@ import 'Operations Screens/Flight_Lists/moderate_flights.dart';
 import 'Operations Screens/Flight_Lists/healthy_flights.dart';
 
 import 'Admin Screens/admin_dashboard.dart';
+import 'Admin Screens/adjust_weights.dart';
+import 'Admin Screens/admin_reports.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 
@@ -87,12 +89,15 @@ class MyApp extends StatelessWidget {
             const ModerateRiskFlightsScreen(),
         '/healthy_risk_flights': (context) => const HealthyRiskFlightsScreen(),
         '/flight_details_operations': (context) => const FlightDetailsScreen(),
-        'fatigue_details': (context) => const FatigueDetailsScreen(flightId: 'PK301'),
+        'fatigue_details': (context) =>
+            const FatigueDetailsScreen(flightId: 'PK301'),
         '/profile': (context) => const ProfileScreen(),
         '/operation_profile': (context) => const OperationsProfileScreen(),
         '/operation_dashboard': (context) => const OperationsDashboardScreen(),
         '/flight_details_pilot': (context) => const PilotFlightDetailsScreen(),
-        '/admin_dashboard': (context) => const AdminDashboardScreen(),
+        '/admin_dashboard': (context) => AdminDashboardScreen(),
+        '/adjust_weights': (context) => WeightAdjustmentScreen(),
+        '/admin_reports': (context) => ReportsScreen(),
       },
     );
   }
