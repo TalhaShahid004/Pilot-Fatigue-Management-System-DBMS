@@ -97,7 +97,7 @@ static String getRiskCategory(
       flightDepartureTime != null) {
     
     // Check Critical Triggers
-    if (_hasCriticalTriggers(
+    if (hasCriticalTriggers(
       totalFlightHoursLast7Days: totalFlightHoursLast7Days,
       lastRestPeriodHours: lastRestPeriodHours,
       hoursSleptLast24: hoursSleptLast24,
@@ -127,7 +127,7 @@ static String getRiskCategory(
   if (score >= 0.5) return 'Moderate';
   return 'Healthy';
 }
-static bool _hasCriticalTriggers({
+static bool hasCriticalTriggers({
   required num totalFlightHoursLast7Days,
   required num lastRestPeriodHours,
   required num hoursSleptLast24,

@@ -34,12 +34,6 @@ Future<void> _updateOperationalMetrics() async {
 
 class _OperationsDashboardScreenState extends State<OperationsDashboardScreen> {
   @override
-  void initState() {
-    super.initState();
-    _recalculateAllPilotScores();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF141414),
@@ -150,6 +144,67 @@ class _OperationsDashboardScreenState extends State<OperationsDashboardScreen> {
     );
   }
 
+  Widget _buildRiskButton({
+    required String label,
+    required int flightCount,
+    required VoidCallback onPressed,
+    required IconData icon,
+    required Color backgroundColor,
+    required Color textColor,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: 120,
+      decoration: BoxDecoration(
+        color: backgroundColor.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Left side content
+                Row(
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Icon(
+                      icon,
+                      color: textColor,
+                      size: 34,
+                    ),
+                  ],
+                ),
+                // Right side content
+                Text(
+                  '$flightCount flights',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: textColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildDrawer(BuildContext context) {
     final AuthService _authService = AuthService();
 
@@ -244,362 +299,406 @@ class _OperationsDashboardScreenState extends State<OperationsDashboardScreen> {
     );
   }
 
-  Future<void> _verifyAndUpdateRiskCategories() async {
+Future<void> _verifyAndUpdateRiskCategories() async {
+  final firestore = FirebaseFirestore.instance;
+  
+  // Get all flights that need verification
+  final criticalFlights = await firestore.collection('criticalFlights').get();
+  final moderateFlights = await firestore.collection('moderateFlights').get();
+  final healthyFlights = await firestore.collection('healthyFlights').get();
+
+  for (var flightDoc in [
+    ...criticalFlights.docs,
+    ...moderateFlights.docs,
+    ...healthyFlights.docs
+  ]) {
+    final flightData = flightDoc.data();
+    final List<dynamic> pilots = flightData['pilots'];
+    final startTime = (flightData['startTime'] as Timestamp).toDate();
+    
+    print('Processing flight: ${flightData['flightId']}');
+    print('Flight details:');
+    print('Start time: $startTime');
+    print('Number of pilots: ${pilots.length}');
+
+    String finalRiskCategory = 'Healthy';
+    bool needsUpdate = false;
+
+    // Check each pilot's latest scores and metrics
+    for (var pilot in pilots) {
+      final pilotId = pilot['pilotId'];
+      print('Checking pilot: $pilotId');
+
+      final metricsDoc = await firestore.collection('pilotMetrics').doc(pilotId).get();
+      print('Metrics document exists: ${metricsDoc.exists}');
+
+      final assessmentQuery = await firestore
+          .collection('fatigueAssessments')
+          .where('pilotId', isEqualTo: pilotId)
+          .where('flightId', isEqualTo: flightData['flightId'])
+          .limit(1)
+          .get();
+
+      print('Assessment query results: ${assessmentQuery.docs.length}');
+      print('Assessment found: ${assessmentQuery.docs.isNotEmpty}');
+
+      if (metricsDoc.exists && assessmentQuery.docs.isNotEmpty) {
+        final metrics = metricsDoc.data()!;
+        final assessmentDoc = assessmentQuery.docs.first;
+        final assessmentData = assessmentDoc.data();
+        final questions = assessmentData['questions'] as Map<String, dynamic>;
+
+        print('Assessment data: $assessmentData');
+        print('Assessment document exists: ${assessmentDoc.exists}');
+
+        // Debug print metrics and assessment values
+        print('Pilot metrics:');
+        print('Flight hours (7 days): ${metrics['totalFlightHoursLast7Days']}');
+        print('Time zones crossed: ${metrics['timeZonesCrossedLast24Hours']}');
+        print('Last rest period: ${metrics['lastRestPeriodEnd']}');
+        
+        print('Pilot assessment:');
+        print('Alertness Level: ${questions['alertnessLevel']}');
+        print('Hours Slept: ${questions['hoursSleptLast24']}');
+        print('Sleep Quality: ${questions['sleepQuality']}');
+        print('Stress Level: ${questions['stressLevel']}');
+
+        // Check critical thresholds first
+        // Check critical thresholds first
+print('Checking critical thresholds...');
+if (questions['alertnessLevel'] <= 2) {
+  print('CRITICAL: Alertness Level <= 2');
+  finalRiskCategory = 'Critical';
+  needsUpdate = true;
+  break;
+}
+if (questions['hoursSleptLast24'] <= 4) {
+  print('CRITICAL: Hours Slept <= 4');
+  finalRiskCategory = 'Critical';
+  needsUpdate = true;
+  break;
+}
+if (questions['sleepQuality'] == 'Very Poor') {
+  print('CRITICAL: Sleep Quality Very Poor');
+  finalRiskCategory = 'Critical';
+  needsUpdate = true;
+  break;
+}
+if (questions['stressLevel'] >= 8) {
+  print('CRITICAL: Stress Level >= 8');
+  finalRiskCategory = 'Critical';
+  needsUpdate = true;
+  break;
+}
+
+// Only check moderate triggers if we haven't found critical ones
+if (finalRiskCategory != 'Critical') {
+  print('Checking moderate thresholds...');
+  
+  // Rest + Duration triggers
+  if (metrics['totalFlightHoursLast7Days'] > 35 && metrics['lastRestPeriodHours'] < 14) {
+    print('MODERATE: Flight hours + Rest period threshold');
+    finalRiskCategory = 'Moderate';
+    needsUpdate = true;
+  }
+  if (questions['hoursSleptLast24'] < 6 && flightData['duration'] > 6) {
+    print('MODERATE: Sleep + Flight duration threshold');
+    finalRiskCategory = 'Moderate';
+    needsUpdate = true;
+  }
+
+  // Timezone Impact
+  if (metrics['timeZonesCrossedLast24Hours'] > 3 && metrics['lastRestPeriodHours'] < 14) {
+    print('MODERATE: Timezone + Rest threshold');
+    finalRiskCategory = 'Moderate';
+    needsUpdate = true;
+  }
+
+  // Self-Assessment Concerns
+  if (questions['stressLevel'] > 7) {
+    print('MODERATE: High stress level');
+    finalRiskCategory = 'Moderate';
+    needsUpdate = true;
+  }
+  if (questions['alertnessLevel'] < 4) {
+    print('MODERATE: Low alertness level');
+    finalRiskCategory = 'Moderate';
+    needsUpdate = true;
+  }
+  if (questions['sleepQuality'] == 'Poor' && flightData['duration'] > 4) {
+    print('MODERATE: Poor sleep + Long flight');
+    finalRiskCategory = 'Moderate';
+    needsUpdate = true;
+  }
+
+  // Time of Day checks
+  final hour = startTime.hour;
+  final isNightFlight = hour >= 22 || hour < 6;
+  final isEarlyMorning = hour >= 4 && hour < 6;
+
+  if (isNightFlight && questions['hoursSleptLast24'] < 7) {
+    print('MODERATE: Night flight + Insufficient sleep');
+    finalRiskCategory = 'Moderate';
+    needsUpdate = true;
+  }
+  
+  if (isEarlyMorning && metrics['lastDutyEnd'] != null) {
+    final previousDutyEnd = (metrics['lastDutyEnd'] as Timestamp).toDate();
+    final previousDutyHour = previousDutyEnd.hour;
+    if (previousDutyHour >= 22) {
+      print('MODERATE: Early morning after late duty');
+      finalRiskCategory = 'Moderate';
+      needsUpdate = true;
+    }
+  }
+}
+      }
+    }
+
+    if (needsUpdate) {
+      print('Updating flight risk category to: $finalRiskCategory');
+      
+      // Remove from all collections first
+      await Future.wait([
+        firestore.collection('criticalFlights').doc(flightData['flightId']).delete(),
+        firestore.collection('moderateFlights').doc(flightData['flightId']).delete(),
+        firestore.collection('healthyFlights').doc(flightData['flightId']).delete(),
+      ]);
+
+      // Add to new collection
+      await firestore
+          .collection('${finalRiskCategory.toLowerCase()}Flights')
+          .doc(flightData['flightId'])
+          .set({
+        ...flightData,
+        'riskCategory': finalRiskCategory,
+      });
+
+      // Update main flight document
+      await firestore
+          .collection('flights')
+          .doc(flightData['flightId'])
+          .update({'riskCategory': finalRiskCategory});
+      
+      print('Flight risk category updated successfully');
+    }
+  }
+
+  print('Updating operational metrics...');
+  await _updateOperationalMetrics();
+  print('Risk category verification complete');
+}
+  Future<double> calculatePilotFatigueScore(
+    Map<String, dynamic> metrics,
+    Map<String, dynamic> assessment,
+    String pilotId,
+    String flightId,
+  ) async {
+    final questions = assessment['questions'] as Map<String, dynamic>;
+    final flightDoc = await FirebaseFirestore.instance
+        .collection('flights')
+        .doc(flightId)
+        .get();
+    final flightData = flightDoc.data()!;
+
+    final flightHoursWeight = FatigueCalculator.normalizeFlightHoursWeek(
+        metrics['totalFlightHoursLast7Days'] ?? 0);
+    final timeZoneWeight = FatigueCalculator.normalizeTimeZones(
+        metrics['timeZonesCrossedLast24Hours'] ?? 0);
+    final restPeriodWeight = FatigueCalculator.calculateRestPeriodScore(
+        metrics['lastRestPeriodEnd'], questions['hoursSleptLast24'] ?? 8);
+    final flightDurationWeight = FatigueCalculator.normalizeFlightDuration(
+        metrics['currentDutyPeriodDuration'] ?? 0);
+    final selfAssessmentWeight =
+        FatigueCalculator.normalizeSelfAssessment(questions);
+
+    final finalScore = FatigueCalculator.calculateFinalScore(
+      flightHoursWeight: flightHoursWeight,
+      timeZoneWeight: timeZoneWeight,
+      restPeriodWeight: restPeriodWeight,
+      flightDurationWeight: flightDurationWeight,
+      selfAssessmentWeight: selfAssessmentWeight,
+    );
+
+    final riskCategory = FatigueCalculator.getRiskCategory(
+      finalScore,
+      totalFlightHoursLast7Days: metrics['totalFlightHoursLast7Days'] ?? 0,
+      lastRestPeriodHours: metrics['lastRestPeriodHours'] ?? 0,
+      hoursSleptLast24: questions['hoursSleptLast24'] ?? 0,
+      timezoneCrossingsLast24: metrics['timeZonesCrossedLast24Hours'] ?? 0,
+      selfAssessment: questions,
+      scheduledFlightDuration: flightData['duration'] ?? 0,
+      flightDepartureTime: (flightData['startTime'] as Timestamp).toDate(),
+      previousDutyEndTime: metrics['lastDutyEnd'] != null
+          ? (metrics['lastDutyEnd'] as Timestamp).toDate()
+          : null,
+    );
+
+    // Store the calculated scores
+    await FirebaseFirestore.instance
+        .collection('fatigueScores')
+        .doc('${pilotId}_$flightId')
+        .set({
+      'pilotId': pilotId,
+      'flightId': flightId,
+      'assessmentId': '${pilotId}_$flightId',
+      'dutyHourScore': flightHoursWeight,
+      'timezoneScore': timeZoneWeight,
+      'restPeriodScore': restPeriodWeight,
+      'flightDurationScore': flightDurationWeight,
+      'selfAssessmentScore': selfAssessmentWeight,
+      'finalScore': finalScore,
+      'riskCategory': riskCategory,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    return finalScore;
+  }
+
+  Future<void> _recalculateAllPilotScores() async {
     final firestore = FirebaseFirestore.instance;
 
-    // Get all flights that need verification
-    final criticalFlights = await firestore.collection('criticalFlights').get();
-    final moderateFlights = await firestore.collection('moderateFlights').get();
-    final healthyFlights = await firestore.collection('healthyFlights').get();
+    try {
+      // Get all active flights
+      final flightsQuery = await firestore
+          .collection('flights')
+          .where('status', isEqualTo: 'Scheduled')
+          .get();
 
-    for (var flightDoc in [
-      ...criticalFlights.docs,
-      ...moderateFlights.docs,
-      ...healthyFlights.docs
-    ]) {
-      final flightData = flightDoc.data();
-      final List<dynamic> pilots = flightData['pilots'];
+      for (var flightDoc in flightsQuery.docs) {
+        final flightData = flightDoc.data();
+        final List<dynamic> pilots = flightData['pilots'];
 
-      double highestScore = 0.0;
-      bool hasRedFlags = false;
+        double highestScore = 0.0;
+        String highestRiskCategory = 'Healthy';
+        List<Map<String, dynamic>> updatedPilots = [];
 
-      // Check each pilot's latest scores
-      for (var pilot in pilots) {
-        final pilotId = pilot['pilotId'];
-
-        // Get latest assessment
-        final assessment = await firestore
-            .collection('fatigueAssessments')
-            .doc('${pilotId}_${flightData['flightId']}')
-            .get();
-
-        if (assessment.exists) {
-          final assessmentData = assessment.data()!;
-          final questions = assessmentData['questions'] as Map<String, dynamic>;
-
-          // Check for red flags
-          if (questions['alertnessLevel'] <= 2 ||
-              questions['hoursSleptLast24'] <= 4 ||
-              questions['sleepQuality'] <= 3 ||
-              questions['stressLevel'] >= 8) {
-            hasRedFlags = true;
-            break;
-          }
-
-          // Get fatigue score
-          final scoreDoc = await firestore
-              .collection('fatigueScores')
-              .doc('${pilotId}_${flightData['flightId']}')
+        // Process each pilot in the flight
+        for (var pilot in pilots) {
+          final pilotId = pilot['pilotId'];
+          final metricsDoc =
+              await firestore.collection('pilotMetrics').doc(pilotId).get();
+          final assessmentDoc = await firestore
+              .collection('fatigueAssessments')
+              .doc('${pilotId}_${flightDoc.id}')
               .get();
 
-          if (scoreDoc.exists) {
-            final score = scoreDoc.data()!['finalScore'] as double;
-            if (score > highestScore) {
-              highestScore = score;
+          if (metricsDoc.exists && assessmentDoc.exists) {
+            final metrics = metricsDoc.data()!;
+            final assessment = assessmentDoc.data()!;
+
+            final fatigueScore = await calculatePilotFatigueScore(
+                metrics, assessment, pilotId, flightDoc.id);
+
+            // Update pilot's fatigue score
+            updatedPilots.add({
+              ...pilot,
+              'fatigueScore': fatigueScore,
+            });
+
+            // Keep track of highest risk score
+            if (fatigueScore > highestScore) {
+              highestScore = fatigueScore;
+              highestRiskCategory =
+                  FatigueCalculator.getRiskCategory(fatigueScore);
             }
           }
         }
-      }
 
-      // Determine correct risk category
-      String correctCategory;
-      if (hasRedFlags || highestScore >= 0.7) {
-        correctCategory = 'Critical';
-      } else if (highestScore >= 0.5) {
-        correctCategory = 'Moderate';
-      } else {
-        correctCategory = 'Healthy';
-      }
-
-      // Move flight to correct collection if needed
-      final currentCollection = flightDoc.reference.parent.id;
-      if (currentCollection != '${correctCategory.toLowerCase()}Flights') {
-        // Add to correct collection
-        await firestore
-            .collection('${correctCategory.toLowerCase()}Flights')
-            .doc(flightData['flightId'])
-            .set(flightData);
-
-        // Remove from current collection
-        await flightDoc.reference.delete();
-
-        // Update main flight document
-        await firestore
-            .collection('flights')
-            .doc(flightData['flightId'])
-            .update({'riskCategory': correctCategory});
-      }
-    }
-
-    // Update operational metrics
-    final criticalCount =
-        (await firestore.collection('criticalFlights').count().get()).count;
-    final moderateCount =
-        (await firestore.collection('moderateFlights').count().get()).count;
-    final healthyCount =
-        (await firestore.collection('healthyFlights').count().get()).count;
-
-    await firestore.collection('operationalMetrics').doc('PIA').update({
-      'criticalFlightsCount': criticalCount,
-      'moderateFlightsCount': moderateCount,
-      'healthyFlightsCount': healthyCount,
-      'lastUpdated': FieldValue.serverTimestamp(),
-    });
-  }
-
-  Widget _buildRiskButton({
-    required String label,
-    required int flightCount,
-    required VoidCallback onPressed,
-    required IconData icon,
-    required Color backgroundColor,
-    required Color textColor,
-  }) {
-    return Container(
-      width: double.infinity,
-      height: 120,
-      decoration: BoxDecoration(
-        color: backgroundColor.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Left side content
-                Row(
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: textColor,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Icon(
-                      icon,
-                      color: textColor,
-                      size: 34,
-                    ),
-                  ],
-                ),
-                // Right side content
-                Text(
-                  '$flightCount flights',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: textColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// Function to initialize operational metrics
-Future<void> _initializeOperationalMetrics() async {
-  final firestore = FirebaseFirestore.instance;
-
-  await firestore.collection('operationalMetrics').doc('PIA').set({
-    'criticalFlightsCount': 0,
-    'moderateFlightsCount': 0,
-    'healthyFlightsCount': 0,
-    'lastUpdated': FieldValue.serverTimestamp(),
-  });
-}
-
-Future<void> _recalculateAllPilotScores() async {
-  final firestore = FirebaseFirestore.instance;
-
-  try {
-    // Get all active flights
-    final flightsQuery = await firestore
-        .collection('flights')
-        .where('status', isEqualTo: 'Scheduled')
-        .get();
-
-    for (var flightDoc in flightsQuery.docs) {
-      final flightData = flightDoc.data();
-      final List<dynamic> pilots = flightData['pilots'];
-
-      double highestScore = 0.0;
-      String highestRiskCategory = 'Healthy';
-      List<Map<String, dynamic>> updatedPilots = [];
-
-      // Process each pilot in the flight
-      for (var pilot in pilots) {
-        final pilotId = pilot['pilotId'];
-        final metricsDoc =
-            await firestore.collection('pilotMetrics').doc(pilotId).get();
-        final assessmentDoc = await firestore
-            .collection('fatigueAssessments')
-            .doc('${pilotId}_${flightDoc.id}')
-            .get();
-
-        if (metricsDoc.exists && assessmentDoc.exists) {
-          final metrics = metricsDoc.data()!;
-          final assessment = assessmentDoc.data()!;
-
-          final fatigueScore = await calculatePilotFatigueScore(
-              metrics, assessment, pilotId, flightDoc.id);
-
-          // Update pilot's fatigue score
-          updatedPilots.add({
-            ...pilot,
-            'fatigueScore': fatigueScore,
-          });
-
-          // Keep track of highest risk score
-          if (fatigueScore > highestScore) {
-            highestScore = fatigueScore;
-            highestRiskCategory =
-                FatigueCalculator.getRiskCategory(fatigueScore);
-          }
-        }
-      }
-
- // Preserve existing flight data while updating
-final existingFlightData = flightDoc.data()!;
-final updatedFlightData = {
-  ...existingFlightData,
-  'riskCategory': highestRiskCategory,
-  'pilots': pilots.map((pilot) => {
-    'pilotId': pilot['pilotId'],
-    'name': pilot['name'],
-    'role': pilot['role'],
-    'fatigueScore': updatedPilots.firstWhere(
-      (p) => p['pilotId'] == pilot['pilotId'],
-      orElse: () => pilot
-    )['fatigueScore'],
-  }).toList(),
-};
+        // Preserve existing flight data while updating
+        final existingFlightData = flightDoc.data()!;
+        final updatedFlightData = {
+          ...existingFlightData,
+          'riskCategory': highestRiskCategory,
+          'pilots': pilots
+              .map((pilot) => {
+                    'pilotId': pilot['pilotId'],
+                    'name': pilot['name'],
+                    'role': pilot['role'],
+                    'fatigueScore': updatedPilots.firstWhere(
+                        (p) => p['pilotId'] == pilot['pilotId'],
+                        orElse: () => pilot)['fatigueScore'],
+                  })
+              .toList(),
+        };
 
 // Update flight document
-await firestore.collection('flights').doc(flightDoc.id).set(updatedFlightData);
+        await firestore
+            .collection('flights')
+            .doc(flightDoc.id)
+            .set(updatedFlightData);
+
+        Future<void> _updateRiskSpecificCollections(
+            String flightId,
+            Map<String, dynamic> flightData,
+            String riskCategory,
+            List<Map<String, dynamic>> pilots) async {
+          final firestore = FirebaseFirestore.instance;
+          final flightInfo = {
+            'flightId': flightId,
+            'flightNumber': flightData['flightNumber'],
+            'route': flightData['route'],
+            'startTime': flightData['startTime'],
+            'endTime': flightData['endTime'],
+            'duration': flightData['duration'],
+            'status': flightData['status'],
+            'pilots': pilots
+                .map((pilot) => {
+                      'pilotId': pilot['pilotId'],
+                      'name': pilot['name'],
+                      'role': pilot['role'],
+                      'fatigueScore': pilot['fatigueScore'],
+                    })
+                .toList(),
+          };
+          // Remove from all risk collections first
+          await Future.wait([
+            firestore.collection('criticalFlights').doc(flightId).delete(),
+            firestore.collection('moderateFlights').doc(flightId).delete(),
+            firestore.collection('healthyFlights').doc(flightId).delete(),
+          ]);
+
+          // Add to appropriate collection based on risk category
+          switch (riskCategory) {
+            case 'Critical':
+              await firestore
+                  .collection('criticalFlights')
+                  .doc(flightId)
+                  .set(flightInfo);
+              break;
+            case 'Moderate':
+              await firestore
+                  .collection('moderateFlights')
+                  .doc(flightId)
+                  .set(flightInfo);
+              break;
+            case 'Healthy':
+              await firestore
+                  .collection('healthyFlights')
+                  .doc(flightId)
+                  .set(flightInfo);
+              break;
+          }
+        }
 
 // Update risk-specific collections
-await _updateRiskSpecificCollections(
-  flightDoc.id, 
-  updatedFlightData,  // Pass the complete updated data
-  highestRiskCategory,
-  updatedFlightData['pilots'] as List<Map<String, dynamic>>
-);
+        await _updateRiskSpecificCollections(
+            flightDoc.id,
+            updatedFlightData, // Pass the complete updated data
+            highestRiskCategory,
+            updatedFlightData['pilots'] as List<Map<String, dynamic>>);
+      }
+
+      // Update operational metrics
+      await _updateOperationalMetrics();
+    } catch (e) {
+      print('Error calculating fatigue scores: $e');
     }
-
-    // Update operational metrics
-    await _updateOperationalMetrics();
-  } catch (e) {
-    print('Error calculating fatigue scores: $e');
   }
-}
 
-Future<void> _updateRiskSpecificCollections(
-    String flightId,
-    Map<String, dynamic> flightData,
-    String riskCategory,
-    List<Map<String, dynamic>> pilots) async {
-  final firestore = FirebaseFirestore.instance;
-final flightInfo = {
-  'flightId': flightId,
-  'flightNumber': flightData['flightNumber'],
-  'route': flightData['route'],
-  'startTime': flightData['startTime'],
-  'endTime': flightData['endTime'],
-  'duration': flightData['duration'],
-  'status': flightData['status'],
-  'pilots': pilots.map((pilot) => {
-    'pilotId': pilot['pilotId'],
-    'name': pilot['name'],
-    'role': pilot['role'],
-    'fatigueScore': pilot['fatigueScore'],
-  }).toList(),
-};
-  // Remove from all risk collections first
-  await Future.wait([
-    firestore.collection('criticalFlights').doc(flightId).delete(),
-    firestore.collection('moderateFlights').doc(flightId).delete(),
-    firestore.collection('healthyFlights').doc(flightId).delete(),
-  ]);
-
-  // Add to appropriate collection based on risk category
-  switch (riskCategory) {
-    case 'Critical':
-      await firestore
-          .collection('criticalFlights')
-          .doc(flightId)
-          .set(flightInfo);
-      break;
-    case 'Moderate':
-      await firestore
-          .collection('moderateFlights')
-          .doc(flightId)
-          .set(flightInfo);
-      break;
-    case 'Healthy':
-      await firestore
-          .collection('healthyFlights')
-          .doc(flightId)
-          .set(flightInfo);
-      break;
+  @override
+  void initState() {
+    super.initState();
+    _recalculateAllPilotScores();
   }
-}
-
-Future<double> calculatePilotFatigueScore(
-  Map<String, dynamic> metrics,
-  Map<String, dynamic> assessment,
-  String pilotId,
-  String flightId,
-) async {
-  final flightHoursWeight = FatigueCalculator.normalizeFlightHoursWeek(
-      metrics['totalFlightHoursLast7Days'] ?? 0);
-  final timeZoneWeight = FatigueCalculator.normalizeTimeZones(
-      metrics['timeZonesCrossedLast24Hours'] ?? 0);
-  final restPeriodWeight = FatigueCalculator.calculateRestPeriodScore(
-      metrics['lastRestPeriodEnd'],
-      assessment['questions']['hoursSleptLast24'] ?? 8);
-  final flightDurationWeight = FatigueCalculator.normalizeFlightDuration(
-      metrics['currentDutyPeriodDuration'] ?? 0);
-  final selfAssessmentWeight =
-      FatigueCalculator.normalizeSelfAssessment(assessment['questions']);
-
-  final finalScore = FatigueCalculator.calculateFinalScore(
-    flightHoursWeight: flightHoursWeight,
-    timeZoneWeight: timeZoneWeight,
-    restPeriodWeight: restPeriodWeight,
-    flightDurationWeight: flightDurationWeight,
-    selfAssessmentWeight: selfAssessmentWeight,
-  );
-
-  // Store the calculated scores
-  await FirebaseFirestore.instance
-      .collection('fatigueScores')
-      .doc('${pilotId}_$flightId')
-      .set({
-    'pilotId': pilotId,
-    'flightId': flightId,
-    'assessmentId': '${pilotId}_$flightId',
-    'dutyHourScore': flightHoursWeight,
-    'timezoneScore': timeZoneWeight,
-    'restPeriodScore': restPeriodWeight,
-    'flightDurationScore': flightDurationWeight,
-    'selfAssessmentScore': selfAssessmentWeight,
-    'finalScore': finalScore,
-    'riskCategory': FatigueCalculator.getRiskCategory(finalScore),
-    'timestamp': FieldValue.serverTimestamp(),
-  });
-
-  return finalScore;
 }
