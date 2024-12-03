@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/Operations%20Screens/operationProfile.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
@@ -68,9 +66,18 @@ class _OperationsDashboardScreenState extends State<OperationsDashboardScreen> {
       body: SafeArea(
         child: StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance
-              .collection('operationalMetrics')
-              .doc('PIA')
-              .snapshots(),
+              .collection('flights')
+              .snapshots()
+              .asyncMap((snapshot) async {
+            // Verify and update risk categories before showing counts
+            await _verifyAndUpdateRiskCategories();
+
+            // Then fetch the latest metrics
+            return await FirebaseFirestore.instance
+                .collection('operationalMetrics')
+                .doc('PIA')
+                .get();
+          }),
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return const Center(
@@ -292,164 +299,153 @@ class _OperationsDashboardScreenState extends State<OperationsDashboardScreen> {
     );
   }
 
-  Future<void> _verifyAndUpdateRiskCategories() async {
-    final firestore = FirebaseFirestore.instance;
+Future<void> _verifyAndUpdateRiskCategories() async {
+  final firestore = FirebaseFirestore.instance;
+  
+  // Get all flights that need verification
+  final criticalFlights = await firestore.collection('criticalFlights').get();
+  final moderateFlights = await firestore.collection('moderateFlights').get();
+  final healthyFlights = await firestore.collection('healthyFlights').get();
 
-    // Get all flights that need verification
-    final criticalFlights = await firestore.collection('criticalFlights').get();
-    final moderateFlights = await firestore.collection('moderateFlights').get();
-    final healthyFlights = await firestore.collection('healthyFlights').get();
+  for (var flightDoc in [
+    ...criticalFlights.docs,
+    ...moderateFlights.docs,
+    ...healthyFlights.docs
+  ]) {
+    final flightData = flightDoc.data();
+    final List<dynamic> pilots = flightData['pilots'];
+    final startTime = (flightData['startTime'] as Timestamp).toDate();
+    
+  
+    String finalRiskCategory = 'Healthy';
+    bool needsUpdate = false;
 
-    for (var flightDoc in [
-      ...criticalFlights.docs,
-      ...moderateFlights.docs,
-      ...healthyFlights.docs
-    ]) {
-      final flightData = flightDoc.data();
-      final List<dynamic> pilots = flightData['pilots'];
-      final startTime = (flightData['startTime'] as Timestamp).toDate();
+    // Check each pilot's latest scores and metrics
+    for (var pilot in pilots) {
+      final pilotId = pilot['pilotId'];
 
-      String finalRiskCategory = 'Healthy';
-      bool needsUpdate = false;
+      final metricsDoc = await firestore.collection('pilotMetrics').doc(pilotId).get();
 
-      // Check each pilot's latest scores and metrics
-      for (var pilot in pilots) {
-        final pilotId = pilot['pilotId'];
+      final assessmentQuery = await firestore
+          .collection('fatigueAssessments')
+          .where('pilotId', isEqualTo: pilotId)
+          .where('flightId', isEqualTo: flightData['flightId'])
+          .limit(1)
+          .get();
 
-        final metricsDoc =
-            await firestore.collection('pilotMetrics').doc(pilotId).get();
+     
+      if (metricsDoc.exists && assessmentQuery.docs.isNotEmpty) {
+        final metrics = metricsDoc.data()!;
+        final assessmentDoc = assessmentQuery.docs.first;
+        final assessmentData = assessmentDoc.data();
+        final questions = assessmentData['questions'] as Map<String, dynamic>;
 
-        final assessmentQuery = await firestore
-            .collection('fatigueAssessments')
-            .where('pilotId', isEqualTo: pilotId)
-            .where('flightId', isEqualTo: flightData['flightId'])
-            .limit(1)
-            .get();
-
-        if (metricsDoc.exists && assessmentQuery.docs.isNotEmpty) {
-          final metrics = metricsDoc.data()!;
-          final assessmentDoc = assessmentQuery.docs.first;
-          final assessmentData = assessmentDoc.data();
-          final questions = assessmentData['questions'] as Map<String, dynamic>;
-
-          // Check critical thresholds first
-          if (questions['alertnessLevel'] <= 2) {
-            finalRiskCategory = 'Critical';
-            needsUpdate = true;
-            break;
-          }
-          if (questions['hoursSleptLast24'] <= 4) {
-            finalRiskCategory = 'Critical';
-            needsUpdate = true;
-            break;
-          }
-          if (questions['sleepQuality'] == 'Very Poor') {
-            finalRiskCategory = 'Critical';
-            needsUpdate = true;
-            break;
-          }
-          if (questions['stressLevel'] >= 8) {
-            finalRiskCategory = 'Critical';
-            needsUpdate = true;
-            break;
-          }
+        // Check critical thresholds first
+if (questions['alertnessLevel'] <= 2) {
+  finalRiskCategory = 'Critical';
+  needsUpdate = true;
+  break;
+}
+if (questions['hoursSleptLast24'] <= 4) {
+  finalRiskCategory = 'Critical';
+  needsUpdate = true;
+  break;
+}
+if (questions['sleepQuality'] == 'Very Poor') {
+  finalRiskCategory = 'Critical';
+  needsUpdate = true;
+  break;
+}
+if (questions['stressLevel'] >= 8) {
+  finalRiskCategory = 'Critical';
+  needsUpdate = true;
+  break;
+}
 
 // Only check moderate triggers if we haven't found critical ones
-          if (finalRiskCategory != 'Critical') {
-            // Rest + Duration triggers
-            if (metrics['totalFlightHoursLast7Days'] > 35 &&
-                metrics['lastRestPeriodHours'] < 14) {
-              finalRiskCategory = 'Moderate';
-              needsUpdate = true;
-            }
-            if (questions['hoursSleptLast24'] < 6 &&
-                flightData['duration'] > 6) {
-              finalRiskCategory = 'Moderate';
-              needsUpdate = true;
-            }
+if (finalRiskCategory != 'Critical') {
+  
+  // Rest + Duration triggers
+  if (metrics['totalFlightHoursLast7Days'] > 35 && metrics['lastRestPeriodHours'] < 14) {
+    finalRiskCategory = 'Moderate';
+    needsUpdate = true;
+  }
+  if (questions['hoursSleptLast24'] < 6 && flightData['duration'] > 6) {
+    finalRiskCategory = 'Moderate';
+    needsUpdate = true;
+  }
 
-            // Timezone Impact
-            if (metrics['timeZonesCrossedLast24Hours'] > 3 &&
-                metrics['lastRestPeriodHours'] < 14) {
-              finalRiskCategory = 'Moderate';
-              needsUpdate = true;
-            }
+  // Timezone Impact
+  if (metrics['timeZonesCrossedLast24Hours'] > 3 && metrics['lastRestPeriodHours'] < 14) {
+    finalRiskCategory = 'Moderate';
+    needsUpdate = true;
+  }
 
-            // Self-Assessment Concerns
-            if (questions['stressLevel'] > 7) {
-              finalRiskCategory = 'Moderate';
-              needsUpdate = true;
-            }
-            if (questions['alertnessLevel'] < 4) {
-              finalRiskCategory = 'Moderate';
-              needsUpdate = true;
-            }
-            if (questions['sleepQuality'] == 'Poor' &&
-                flightData['duration'] > 4) {
-              finalRiskCategory = 'Moderate';
-              needsUpdate = true;
-            }
+  // Self-Assessment Concerns
+  if (questions['stressLevel'] > 7) {
+    finalRiskCategory = 'Moderate';
+    needsUpdate = true;
+  }
+  if (questions['alertnessLevel'] < 4) {
+    finalRiskCategory = 'Moderate';
+    needsUpdate = true;
+  }
+  if (questions['sleepQuality'] == 'Poor' && flightData['duration'] > 4) {
+    finalRiskCategory = 'Moderate';
+    needsUpdate = true;
+  }
 
-            // Time of Day checks
-            final hour = startTime.hour;
-            final isNightFlight = hour >= 22 || hour < 6;
-            final isEarlyMorning = hour >= 4 && hour < 6;
+  // Time of Day checks
+  final hour = startTime.hour;
+  final isNightFlight = hour >= 22 || hour < 6;
+  final isEarlyMorning = hour >= 4 && hour < 6;
 
-            if (isNightFlight && questions['hoursSleptLast24'] < 7) {
-              finalRiskCategory = 'Moderate';
-              needsUpdate = true;
-            }
-
-            if (isEarlyMorning && metrics['lastDutyEnd'] != null) {
-              final previousDutyEnd =
-                  (metrics['lastDutyEnd'] as Timestamp).toDate();
-              final previousDutyHour = previousDutyEnd.hour;
-              if (previousDutyHour >= 22) {
-                finalRiskCategory = 'Moderate';
-                needsUpdate = true;
-              }
-            }
-          }
-        }
-      }
-
-      if (needsUpdate) {
-        // Remove from all collections first
-        await Future.wait([
-          firestore
-              .collection('criticalFlights')
-              .doc(flightData['flightId'])
-              .delete(),
-          firestore
-              .collection('moderateFlights')
-              .doc(flightData['flightId'])
-              .delete(),
-          firestore
-              .collection('healthyFlights')
-              .doc(flightData['flightId'])
-              .delete(),
-        ]);
-
-        // Add to new collection
-        await firestore
-            .collection('${finalRiskCategory.toLowerCase()}Flights')
-            .doc(flightData['flightId'])
-            .set({
-          ...flightData,
-          'riskCategory': finalRiskCategory,
-        });
-
-        // Update main flight document
-        await firestore
-            .collection('flights')
-            .doc(flightData['flightId'])
-            .update({'riskCategory': finalRiskCategory});
+  if (isNightFlight && questions['hoursSleptLast24'] < 7) {
+    finalRiskCategory = 'Moderate';
+    needsUpdate = true;
+  }
+  
+  if (isEarlyMorning && metrics['lastDutyEnd'] != null) {
+    final previousDutyEnd = (metrics['lastDutyEnd'] as Timestamp).toDate();
+    final previousDutyHour = previousDutyEnd.hour;
+    if (previousDutyHour >= 22) {
+      finalRiskCategory = 'Moderate';
+      needsUpdate = true;
+    }
+  }
+}
       }
     }
 
-    await _updateOperationalMetrics();
+    if (needsUpdate) {
+      
+      // Remove from all collections first
+      await Future.wait([
+        firestore.collection('criticalFlights').doc(flightData['flightId']).delete(),
+        firestore.collection('moderateFlights').doc(flightData['flightId']).delete(),
+        firestore.collection('healthyFlights').doc(flightData['flightId']).delete(),
+      ]);
+
+      // Add to new collection
+      await firestore
+          .collection('${finalRiskCategory.toLowerCase()}Flights')
+          .doc(flightData['flightId'])
+          .set({
+        ...flightData,
+        'riskCategory': finalRiskCategory,
+      });
+
+      // Update main flight document
+      await firestore
+          .collection('flights')
+          .doc(flightData['flightId'])
+          .update({'riskCategory': finalRiskCategory});
+      
+    }
   }
 
+  await _updateOperationalMetrics();
+}
   Future<double> calculatePilotFatigueScore(
     Map<String, dynamic> metrics,
     Map<String, dynamic> assessment,
@@ -657,22 +653,10 @@ class _OperationsDashboardScreenState extends State<OperationsDashboardScreen> {
       print('Error calculating fatigue scores: $e');
     }
   }
-  
-  void startBackgroundVerification() {
-  Timer.periodic(const Duration(minutes: 5), (timer) async {
-    try {
-      await _verifyAndUpdateRiskCategories();
-      await _recalculateAllPilotScores();
-    } catch (e) {
-      print('Background verification error: $e');
-    }
-  });
-}
 
   @override
-void initState() {
-  super.initState();
-  // Start background verification
-  startBackgroundVerification();
-}
+  void initState() {
+    super.initState();
+    _recalculateAllPilotScores();
+  }
 }

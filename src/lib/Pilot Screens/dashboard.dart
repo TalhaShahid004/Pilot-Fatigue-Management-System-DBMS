@@ -480,7 +480,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         arguments: flightId,
       ),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 18,  vertical: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           border: Border.all(color: const Color(0xFF9CABBA)),
