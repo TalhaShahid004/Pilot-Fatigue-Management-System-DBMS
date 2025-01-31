@@ -1,4 +1,3 @@
-
 <h1 align="center">Pilot Fatigue Management System DBMS</h1>
 
 <p align="center">A database-first solution to pilot fatigue tracking and prevention.</p>
@@ -46,29 +45,29 @@ To set up and run this project, you will need Flutter and Firebase installed and
     ```
 
     You can also specify a target platform with command, such as:
-   ```bash
+    ```bash
     flutter run -d chrome  # For web application
     ```
-    
+
 ## Dependencies and Tools
-*   **Flutter:** UI toolkit for building applications.
-*   **Firebase Core:**  Core Firebase functionalities.
-*   **Firebase Authentication:** User authentication management.
-*   **Cloud Firestore:**  Scalable database for storing application data.
-*   **Intl:** Provides support for internationalization in Flutter apps.
+
+*   **Flutter:** UI toolkit for building applications
+*   **Firebase Core:** Core Firebase functionalities
+*   **Firebase Authentication:** User authentication management
+*   **Cloud Firestore:** Scalable database for storing application data
+*   **Intl:** Provides support for internationalization in Flutter apps
 
 ## Contribution Guide
 
 We welcome contributions to the Pilot Fatigue Management System! To get started:
 
-1.  **Fork the repository:** Create a fork of the main repository to work in your own space.
-2.  **Create a new branch:** Make your changes in a new feature branch from the development branch.
-3.  **Make your changes:** Implement your changes, adhering to the project's style and guidelines.
-4.  **Commit your changes:**  Commit your changes with clear and concise messages.
-5.  **Push your branch:** Push your changes to your fork.
-6.  **Create a Pull Request:** Submit a pull request to the development branch of the main repository for review.
+1.  **Fork the repository:** Create a fork of the main repository to work in your own space
+2.  **Create a new branch:** Make your changes in a new feature branch from the development branch
+3.  **Make your changes:** Implement your changes, adhering to the project's style and guidelines
+4.  **Commit your changes:** Commit your changes with clear and concise messages
+5.  **Push your branch:** Push your changes to your fork
+6.  **Create a Pull Request:** Submit a pull request to the development branch of the main repository for review
 
 ## License
 
 This project is licensed under the MIT License
-
